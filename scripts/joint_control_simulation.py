@@ -73,15 +73,17 @@ class RandomTrajectory:
         """
         # Trajectory points
         _time = np.arange(0, self.end_time + self.Ts, step=self.Ts)
-        _tau = 3
-        _amplitude = np.pi
+        _tau = self.end_time/6.0
+        _amplitude = np.pi/2
         for t in _time:
-            if t <= self.end_time*4/5:
-                # self.j1_traj.append(_amplitude * (1 - np.exp(-_tau * t / np.pi)))
-                self.j1_traj.append(np.pi/4)
+            # self.j1_traj.append(_amplitude * (1 - np.exp(-_tau * t / np.pi)))
+            # if t <= self.end_time*4/5:
+            if t <= self.end_time/2:
+                self.j1_traj.append(_amplitude * (1 - np.exp(-t/_tau)))
+                # self.j1_traj.append(np.pi/4)
             else:
-                # self.j1_traj.append(_amplitude * np.exp(-_tau * (t - self.end_time/2) / np.pi))
-                self.j1_traj.append(0)
+                self.j1_traj.append(_amplitude * np.exp(-(t - self.end_time/2)/_tau))
+                # self.j1_traj.append(0)
 
     def actual_values(self, real_joint_angles):
         self.actual_positions = np.array(real_joint_angles.position[0:6])
@@ -136,11 +138,17 @@ class RandomTrajectory:
         _N = self.end_time / self.Ts
         _zeta_actor = 0.01  # Choose the actor to adapt more slowly than the critic
         _zeta_critic = 0.05
-        _Q = generate_SPD_matrix(3)
-        _R = generate_SPD_matrix(1)
+        # _Q = generate_SPD_matrix(3)
+        # _R = generate_SPD_matrix(1)
+        _Q = np.array([[0.53024234, 0.74457313, 0.60552054],
+                      [0.74457313,  1.20395768,  0.83455252],
+                     [0.60552054, 0.83455252, 0.69407163]])
+
+        _R = np.array([[0.08109634]])
         lam, vec = np.linalg.eig(_Q)
 
-        print('''The matrix Q is:
+        print('''The initial actors are 
+The matrix Q is:
 {0}
 The matrix R is:
 {1}
@@ -157,7 +165,7 @@ The eigenvalues of matrix Q are:
         # _Wa_1 = (-1/_Wc_1[3][3]*_Wc_1[3][0:3]).reshape(1, 3)  # shape(1, 3)
         _Wa_1 = (1/_Wc_1[3][3]*_Wc_1[3][0:3]).reshape(1, 3)  # shape(1, 3) NEGATED
         # print(_Wa_1)
-        # _Wa_1[0, 1] *= -1
+        _Wa_1[0, 1] *= -1
         # print(_Wa_1)
         # _Wa_1 = np.zeros((1, 3))  # shape(1, 3)
 
@@ -244,7 +252,6 @@ The eigenvalues of matrix Q are:
         #     # self.nominal_trajectory()
         #     self.signal_update()
         #     pass
-
 
 
 if __name__ == '__main__':
