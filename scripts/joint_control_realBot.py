@@ -74,7 +74,7 @@ class RandomTrajectory:
         # Trajectory points
         _time = np.arange(0, self.end_time + self.Ts, step=self.Ts)
         _tau = self.end_time/6.0
-        _amplitude = np.pi/2
+        _amplitude = 3*np.pi/4
         for t in _time:
             # self.j1_traj.append(_amplitude * (1 - np.exp(-_tau * t / np.pi)))
             # if t <= self.end_time*4/5:
@@ -108,7 +108,7 @@ class RandomTrajectory:
         self.rate = rospy.Rate(1/self.Ts)
 
     def nominal_trajectory(self):
-        for self.idx, j1 in enumerate(self.j1_traj):
+        for j1 in self.j1_traj:
             next_tar = np.array(self.current_joints)
             next_tar[0] = j1
             self.update_target(next_tar)
@@ -118,7 +118,6 @@ class RandomTrajectory:
             # print(self.jointCmd)
             self.pub.publish(self.jointCmd)
             self.rate.sleep()
-            self.idx += 1
 
     def update_target(self, next_targets):
         self.jointCmd.points = []
@@ -126,7 +125,7 @@ class RandomTrajectory:
         self.point.time_from_start = rospy.Duration.from_sec(self.Ts)
         self.point.velocities = ((next_targets - np.array(self.current_joints)) / self.Ts).tolist()
         # self.point.accelerations = (np.array(self.point.velocities) / self.Ts).tolist()
-        # self.current_joints = next_targets.tolist()
+        self.current_joints = next_targets.tolist()
         # self.point.positions = self.current_joints
         self.point.positions = next_targets.tolist()
         self.jointCmd.points.append(self.point)
@@ -138,22 +137,15 @@ class RandomTrajectory:
         _N = self.end_time / self.Ts
         _zeta_actor = 0.01  # Choose the actor to adapt more slowly than the critic
         _zeta_critic = 0.05
-        # _Q = generate_SPD_matrix(3)
-        # _R = generate_SPD_matrix(1)
-        _Q = np.array([[0.53024234, 0.74457313, 0.60552054],
-                      [0.74457313,  1.20395768,  0.83455252],
-                     [0.60552054, 0.83455252, 0.69407163]])
-
-        _R = np.array([[0.08109634]])
+        _Q = generate_SPD_matrix(3)
+        _R = generate_SPD_matrix(1)
+        # _Q = np.array([[0.53024234, 0.74457313, 0.60552054],
+        #               [0.74457313,  1.20395768,  0.83455252],
+        #              [0.60552054, 0.83455252, 0.69407163]])
+        #
+        # _R = np.array([[0.08109634]])
         lam, vec = np.linalg.eig(_Q)
 
-        print('''The initial actors are 
-The matrix Q is:
-{0}
-The matrix R is:
-{1}
-The eigenvalues of matrix Q are:
-{2}'''.format(_Q, _R, lam))
         delta_conv, window_conv = 1e-2, _N/10
 
         _k, _weights_conv = 0, False  # Index and convergence flag
@@ -168,6 +160,14 @@ The eigenvalues of matrix Q are:
         _Wa_1[0, 1] *= -1
         # print(_Wa_1)
         # _Wa_1 = np.zeros((1, 3))  # shape(1, 3)
+        print('''The initial critic matrix is:
+{0} 
+The matrix Q is:
+{1}
+The matrix R is:
+{2}
+The eigenvalues of matrix Q are:
+{3}'''.format(_Wc_1, _Q, _R, lam))
 
         next_tar = np.array(self.current_joints)  # load the next target variable with the current joints
         while _k < _N and not _weights_conv:
@@ -222,31 +222,32 @@ The eigenvalues of matrix Q are:
         Main loop that controls the flow of the program. The robot arm is moved to the home
         position first and then the joint(s) are updated randomly from there.
         """
-        rospy.Subscriber('/j2s6s200/joint_states', JointState, self.actual_values)  # Simulation
-        # rospy.Subscriber('/j2s6s200_driver/out/joint_states', JointState, self.actual_values)  # Real bot
-        self.move_joint_home()
-        print("******************************************************************")
-        print("\t\t\tNominal Motion")
-        print("******************************************************************")
-        self.nominal_trajectory()
+        # rospy.Subscriber('/j2s6s200/joint_states', JointState, self.actual_values)  # Simulation
+        rospy.Subscriber('/j2s6s200_driver/out/joint_state', JointState, self.actual_values)  # Real bot
+        # self.move_joint_home()  # Is this necessary
         # print("******************************************************************")
-        # print("\t\t\tAlgorithm Motion")
+        # print("\t\t\tNominal Motion")
         # print("******************************************************************")
-        # self.signal_update()
+        # self.nominal_trajectory()
+        time.sleep(0.5)
+        print("******************************************************************")
+        print("\t\t\tAlgorithm Motion")
+        print("******************************************************************")
+        self.signal_update()
 
-        # plt.subplot(2, 1, 1)
-        # t = np.arange(0, self.end_time + self.Ts, step=self.Ts)
-        # plt.plot(2*t, self.j1_traj)
-        # plt.plot(2*t[1:], self.algorithm)
-        # plt.legend(['nominal', 'actual'])
-        # # plt.show()
-        #
-        # plt.subplot(2, 1, 2)
-        # plt.plot(_k_lst, np.array(_Wa_1_1))
-        # plt.plot(_k_lst, np.array(_Wa_1_2))
-        # plt.plot(_k_lst, np.array(_Wa_1_3))
-        # plt.legend(['Wa_1', 'Wa_2', 'Wa_3'])
+        plt.subplot(2, 1, 1)
+        t = np.arange(0, self.end_time + self.Ts, step=self.Ts)
+        plt.plot(2*t, self.j1_traj)
+        plt.plot(2*t[1:], self.algorithm)
+        plt.legend(['nominal', 'actual'])
         # plt.show()
+
+        plt.subplot(2, 1, 2)
+        plt.plot(_k_lst, np.array(_Wa_1_1))
+        plt.plot(_k_lst, np.array(_Wa_1_2))
+        plt.plot(_k_lst, np.array(_Wa_1_3))
+        plt.legend(['Wa_1', 'Wa_2', 'Wa_3'])
+        plt.show()
 
         # while not rospy.is_shutdown():
         #     # self.nominal_trajectory()
