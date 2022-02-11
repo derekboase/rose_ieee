@@ -1,6 +1,5 @@
 #! /usr/bin/env python
 
-"""Randomly chooses a robot trajectory in joint space by randomly updating the current pose"""
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -30,7 +29,8 @@ def bound(low, high, val):
 class RandomTrajectory:
     def __init__(self, home_joints, freq=10.0, runtime=10.0):
         # All the setup stuff for the nodes and topics
-        self.topic_name = '/j2s6s200/effort_joint_trajectory_controller/command'
+        self.topic_name = '/j2s6s200/effort_joint_trajectory_controller/command'  # Simulation
+        # self.topic_name = '/j2s6s200_driver/trajectory_controller/command'  # Real bot
         self.pub = rospy.Publisher(self.topic_name, JointTrajectory, queue_size=1)
         # Instantiation of messages and names
         self.jointCmd = JointTrajectory()
@@ -86,6 +86,7 @@ class RandomTrajectory:
     def actual_values(self, real_joint_angles):
         self.actual_positions = np.array(real_joint_angles.position[0:6])
         self.actual_velocities = np.array(real_joint_angles.velocity[0:6])
+        print('The current value of J1 is {}'.format(self.actual_positions[0]))
 
     def move_joint_home(self):
         """
@@ -148,6 +149,7 @@ class RandomTrajectory:
 
         next_tar = np.array(self.current_joints)  # load the next target variable with the current joints
         while _k < _N and not _weights_conv:
+            print(_k)
             # Calculate the control signal: Step 6 for Joint 1 Position
             _u_hat = bound(-0.35, 0.35, float(np.matmul(_Wa_1, _E_k)))  # shape(1,)
             next_tar[0] += _u_hat  # shape(1,)
@@ -191,7 +193,8 @@ class RandomTrajectory:
         Main loop that controls the flow of the program. The robot arm is moved to the home
         position first and then the joint(s) are updated randomly from there.
         """
-        rospy.Subscriber('/j2s6s200/joint_states', JointState, self.actual_values)
+        rospy.Subscriber('/j2s6s200/joint_states', JointState, self.actual_values)  # Simulation
+        # rospy.Subscriber('/j2s6s200_driver/out/joint_states', JointState, self.actual_values)  # Real bot
         self.move_joint_home()
         # print("******************************************************************")
         # print("\t\t\tNominal Motion")
