@@ -1,0 +1,66 @@
+FIRST SUCCESSFUL RUN:
+
+Response: 
+Followed very closely the nominal trajectory.
+
+Initialization:
+Negated the initialization of actor matrix and negated the middle actor. Choose zeta_a = 0.01 
+and zeta_c = 0.05  
+
+i.e.
+_Wa_1 = (1/_Wc_1[3][3]*_Wc_1[3][0:3]).reshape(1, 3)  # shape(1, 3) NEGATED
+_Wa_1[0, 1] *= -1
+_zeta_actor = 0.01  # Choose the actor to adapt more slowly than the critic
+_zeta_critic = 0.05
+
+Q = np.array([[ 0.53024234  0.74457313  0.60552054]
+ [ 0.74457313  1.20395768  0.83455252]
+ [ 0.60552054  0.83455252  0.69407163]])
+
+R = np.array([[ 0.08109634]])
+
+
+SECOND SUCCESSFUL RUN:
+
+Response: 
+Lots of overshoot and long settling time, but it was able to figure it out and eliminate the 
+steady-state error 
+
+Initialization:
+Negated the initialization of actor matrix and negated the middle actor. Choose zeta_a = 0.01 
+and zeta_c = 0.05  
+
+i.e.
+_Wa_1 = (1/_Wc_1[3][3]*_Wc_1[3][0:3]).reshape(1, 3)  # shape(1, 3) NEGATED
+_Wa_1[0, 1] *= -1
+_zeta_actor = 0.01  # Choose the actor to adapt more slowly than the critic
+_zeta_critic = 0.05
+
+Q = np.array([[ 0.12740329  0.19703668  0.20463911]
+ [ 0.19703668  0.38234902  0.21854615]
+ [ 0.20463911  0.21854615  0.65248479]])
+
+R = np.array([[ 0.01008594]])
+
+THIRD SUCCESSFUL RUN:
+
+Response: 
+Graph did not print (error in one of the subplot terms for the actor updates, didn't effect 
+performance). Qualitatively, the response seemed to overshoot and settle on the setpoint
+similar to the first successful run, but with more overshoot and longer settling time.
+
+Initialization:
+*Note* the middle term was set to positive
+Negated the initialization of actor matrix. Choose zeta_a = 0.01 
+and zeta_c = 0.05  
+
+i.e.
+_Wa_1 = (1/_Wc_1[3][3]*_Wc_1[3][0:3]).reshape(1, 3)  # shape(1, 3) NEGATED
+_zeta_actor = 0.01  # Choose the actor to adapt more slowly than the critic
+_zeta_critic = 0.05
+
+Q = np.array([[ 0.63957277  0.30959405  0.43777315]
+ [ 0.30959405  0.19812411  0.2251573 ]
+ [ 0.43777315  0.2251573   0.687965  ]])
+
+R = np.array([[ 0.03710425]])

@@ -86,7 +86,7 @@ class RandomTrajectory:
     def actual_values(self, real_joint_angles):
         self.actual_positions = np.array(real_joint_angles.position[0:6])
         self.actual_velocities = np.array(real_joint_angles.velocity[0:6])
-        print('The current value of J1 is {}'.format(self.actual_positions[0]))
+        # print('The current value of J1 is {}'.format(self.actual_positions[0]))
 
     def move_joint_home(self):
         """
@@ -130,12 +130,22 @@ class RandomTrajectory:
         self.jointCmd.points.append(self.point)
 
     def signal_update(self):
+        global _Wa_1_1, _Wa_1_2, _Wa_1_3, _k_lst
+        _Wa_1_1, _Wa_1_2, _Wa_1_3, _k_lst = [], [], [], []
         # Initialization of algorithm constants
         _N = self.end_time / self.Ts
         _zeta_actor = 0.01  # Choose the actor to adapt more slowly than the critic
         _zeta_critic = 0.05
-        Q = generate_SPD_matrix(3)
-        R = generate_SPD_matrix(1)
+        _Q = generate_SPD_matrix(3)
+        _R = generate_SPD_matrix(1)
+        lam, vec = np.linalg.eig(_Q)
+
+        print('''The matrix Q is:
+{0}
+The matrix R is:
+{1}
+The eigenvalues of matrix Q are:
+{2}'''.format(_Q, _R, lam))
         delta_conv, window_conv = 1e-2, _N/10
 
         _k, _weights_conv = 0, False  # Index and convergence flag
@@ -144,12 +154,19 @@ class RandomTrajectory:
         _E_k1 = np.zeros((3, 1))  # shape(3, 1)
 
         _Wc_1 = generate_SPD_matrix(4)  # shape(4, 4)
-        _Wa_1 = (-1/_Wc_1[3][3]*_Wc_1[3][0:3]).reshape(1, 3)  # shape(1, 3)
+        # _Wa_1 = (-1/_Wc_1[3][3]*_Wc_1[3][0:3]).reshape(1, 3)  # shape(1, 3)
+        _Wa_1 = (1/_Wc_1[3][3]*_Wc_1[3][0:3]).reshape(1, 3)  # shape(1, 3) NEGATED
+        # print(_Wa_1)
+        # _Wa_1[0, 1] *= -1
+        # print(_Wa_1)
         # _Wa_1 = np.zeros((1, 3))  # shape(1, 3)
 
         next_tar = np.array(self.current_joints)  # load the next target variable with the current joints
         while _k < _N and not _weights_conv:
-            print(_k)
+            _Wa_1_1.append(_Wa_1[0, 0])
+            _Wa_1_2.append(_Wa_1[0, 1])
+            _Wa_1_3.append(_Wa_1[0, 2])
+            _k_lst.append(_k)
             # Calculate the control signal: Step 6 for Joint 1 Position
             _u_hat = bound(-0.35, 0.35, float(np.matmul(_Wa_1, _E_k)))  # shape(1,)
             next_tar[0] += _u_hat  # shape(1,)
@@ -163,7 +180,11 @@ class RandomTrajectory:
             _Eu_transpose = np.transpose(_Eu_concat)
             _V_k = 1/2.0 * np.matmul(np.matmul(_Eu_transpose, _Wc_1), _Eu_concat)
             _E_transpose = np.transpose(_E_k)
-            _U_k = 1/2.0 * (np.matmul(np.matmul(_E_transpose, Q), _E_k) + _u_hat*R*_u_hat)
+            _eqe = np.matmul(np.matmul(_E_transpose, _Q), _E_k)
+            _uru = _u_hat*_R*_u_hat
+            # print('For k={0}\nE^TQE={1}\nu^TRu={2}\nu_hat={3}'.format(_k, _eqe, _uru, _u_hat))
+            print('For k={0}\nu_hat={1}\nWa={2}'.format(_k, _u_hat, _Wa_1))
+            _U_k = 1/2.0 * (_eqe + _uru)
 
             # Get E(k + 1), u_hat and V(k_1): Step 9 for Joint 1 Position
             _E_k1[2] = _E_k[1]
@@ -204,16 +225,26 @@ class RandomTrajectory:
         print("\t\t\tAlgorithm Motion")
         print("******************************************************************")
         self.signal_update()
+
+        plt.subplot(2, 1, 1)
         t = np.arange(0, self.end_time + self.Ts, step=self.Ts)
         plt.plot(2*t, self.j1_traj)
         plt.plot(2*t[1:], self.algorithm)
         plt.legend(['nominal', 'actual'])
+        # plt.show()
+
+        plt.subplot(2, 1, 2)
+        plt.plot(_k_lst, np.array(_Wa_1_1))
+        plt.plot(_k_lst, np.array(_Wa_1_2))
+        plt.plot(_k_lst, np.array(_Wa_1_3))
+        plt.legend(['Wa_1', 'Wa_2', 'Wa_3'])
         plt.show()
 
         # while not rospy.is_shutdown():
         #     # self.nominal_trajectory()
         #     self.signal_update()
         #     pass
+
 
 
 if __name__ == '__main__':
@@ -227,7 +258,7 @@ if __name__ == '__main__':
         # unpause_gazebo = rospy.ServiceProxy('/gazebo/unpause_physics', Empty)
         # resp = unpause_gazebo()
 
-        rt = RandomTrajectory([0.0, 2.9, 1.3, -2.1, 1.4, 0.0], freq=2.0, runtime=30.0)
+        rt = RandomTrajectory([0.0, 2.9, 1.3, -2.1, 1.4, 0.0], freq=2.0, runtime=60.0)
         # rt = RandomTrajectory([0.0, 2.0, 1.3, -2.1, 1.4, 0.0], freq=2.0, runtime=60.0)
         # rt = RandomTrajectory(np.deg2rad([180, 270, 90, 270, 270, 270]))
         rt.trajectory_calculator()
