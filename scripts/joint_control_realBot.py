@@ -58,13 +58,15 @@ class RandomTrajectory:
 
         # IMPROVE THIS BY MAKING IT ONE LARGE ARRAY CAllED self.traj with dimensions
         self.j1_traj = []
+        self.j2_traj = []
 
         self.actual_positions = np.zeros((1, 6))
         self.actual_velocities = np.zeros((1, 6))
 
         self.idx = 0
 
-        self.algorithm = []
+        self.algorithm_j1 = []
+        self.algorithm_j2 = []
 
     def trajectory_calculator(self):
         """
@@ -179,7 +181,7 @@ The eigenvalues of matrix Q are:
             _u_hat = bound(-0.35, 0.35, float(np.matmul(_Wa_1, _E_k)))  # shape(1,)
             next_tar[0] += _u_hat  # shape(1,)
             self.update_target(next_tar)
-            self.algorithm.append(self.actual_positions[0])  # For the sole purpose of
+            self.algorithm_j1.append(self.actual_positions[0])  # For the sole purpose of
             self.pub.publish(self.jointCmd)  # Publish the
             self.rate.sleep()
 
@@ -230,15 +232,16 @@ The eigenvalues of matrix Q are:
         # print("******************************************************************")
         # self.nominal_trajectory()
         time.sleep(0.5)
-        print("******************************************************************")
-        print("\t\t\tAlgorithm Motion")
-        print("******************************************************************")
-        self.signal_update()
+        # print("******************************************************************")
+        # print("\t\t\tAlgorithm Motion")
+        # print("******************************************************************")
+        # self.signal_update()
 
+        plt.figure(1)
         plt.subplot(2, 1, 1)
         t = np.arange(0, self.end_time + self.Ts, step=self.Ts)
         plt.plot(2*t, self.j1_traj)
-        plt.plot(2*t[1:], self.algorithm)
+        plt.plot(2*t[1:], self.algorithm_j1)
         plt.legend(['nominal', 'actual'])
         # plt.show()
 
