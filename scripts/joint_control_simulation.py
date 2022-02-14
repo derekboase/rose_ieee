@@ -146,10 +146,20 @@ class RandomTrajectory:
         _N = self.end_time / self.Ts
         _zeta_actor = 0.01  # Choose the actor to adapt more slowly than the critic
         _zeta_critic = 0.05
-        _Q_1 = generate_SPD_matrix(3)
-        _R_1 = generate_SPD_matrix(1)
-        _Q_2 = generate_SPD_matrix(3)
-        _R_2 = generate_SPD_matrix(1)
+        # _Q_1 = generate_SPD_matrix(3)
+        # _R_1 = generate_SPD_matrix(1)
+        # _Q_2 = generate_SPD_matrix(3)
+        # _R_2 = generate_SPD_matrix(1)
+
+        _Q_1 = np.array([[0.51502986, 0.25789362, 0.06580822],
+                         [0.25789362, 0.19214249, 0.0747135],
+                         [0.06580822, 0.0747135, 0.0378436]])
+        _R_1 = np.array([[0.07450969]])
+
+        _Q_2 = np.array([[0.8503787, 0.59430608, 0.4799643],
+                          [0.50802145, 0.51991574, 0.2456848],
+                          [0.4799643, 0.2456848, 0.38590322]])
+        _R_2 = np.array([[0.00876479]])
 
         lam1, vec1 = np.linalg.eig(_Q_1)
         lam2, vec2 = np.linalg.eig(_Q_2)
@@ -164,11 +174,29 @@ class RandomTrajectory:
         _E_k_2 = np.zeros((3, 1))  # shape(3, 1)
         _E_k1_2 = np.zeros((3, 1))  # shape(3, 1)
 
-        _Wc_1 = generate_SPD_matrix(4)  # shape(4, 4)
-        _Wc_2 = generate_SPD_matrix(4)
+        # _Wc_1 = generate_SPD_matrix(4)  # shape(4, 4)
+        # _Wc_2 = generate_SPD_matrix(4)
 
+        _Wc_1 = np.array([[ 0.80349833,  0.30936819,  0.84494049,  0.71454207],
+                          [ 0.30936819,  0.21330422,  0.31156708,  0.36979277],
+                          [ 0.84494049,  0.31156708,  1.09927468,  0.53434843],
+                          [ 0.71454207,  0.36979277,  0.53434843,  0.9285541 ]])
+
+        _Wc_2 = np.array([[ 0.42471294, 0.49183218, 0.54214396, 0.52932378],
+                          [ 0.49183218, 0.66047158, 0.78537323, 0.5942725 ],
+                          [ 0.54214396,  0.78537323, 1.15277585, 0.89469537],
+                          [ 0.52932378, 0.5942725,  0.89469537, 1.05989052]])
+
+        noise = 0.15
         _Wa_1 = (1/_Wc_1[3][3]*_Wc_1[3][0:3]).reshape(1, 3)  # shape(1, 3) NEGATED
+        # _Wa_1[0, 0] = _Wa_1[0, 0] + np.random.normal(scale=noise)
+        # _Wa_1[0, 1] = _Wa_1[0, 1] + np.random.normal(scale=noise)
+        # _Wa_1[0, 2] = _Wa_1[0, 2] + np.random.normal(scale=noise)
+
         _Wa_2 = (1/_Wc_2[3][3]*_Wc_2[3][0:3]).reshape(1, 3)  # shape(1, 3) NEGATED
+        # _Wa_2[0, 0] = _Wa_2[0, 0] + np.random.normal(scale=noise)
+        # _Wa_2[0, 1] = _Wa_2[0, 1] + np.random.normal(scale=noise)
+        # _Wa_2[0, 2] = _Wa_2[0, 2] + np.random.normal(scale=noise)
 
         _Wa_1[0, 1] *= -1
         _Wa_2[0, 1] *= -1
@@ -259,12 +287,14 @@ The eigenvalues of matrix Q2 are:
             # Update critic weights: Step 11 for Joint 1 Position
             temp = _zeta_critic*(_V_k_1 - (_U_k_1 + _V_k1_1))
             _Wc_1 -= temp*np.matmul(_Z_1, _Z_trans_1)
-            _Wa_1 -= _zeta_actor*(np.matmul(_Wa_1, _E_k_1) - (-1/_Wc_1[3][3]*np.matmul(_Wc_1[3][0:3], _E_k_1)))*_E_transpose_1
+            _Wa_1 -= _zeta_actor*(np.matmul(_Wa_1, _E_k_1) -
+                                  (-1/_Wc_1[3][3]*np.matmul(_Wc_1[3][0:3], _E_k_1)))*_E_transpose_1
 
             # Update critic weights: Step 11 for Joint 1 Position
             temp = _zeta_critic*(_V_k_2 - (_U_k_2 + _V_k1_2))
             _Wc_2 -= temp*np.matmul(_Z_2, _Z_trans_2)
-            _Wa_2 -= _zeta_actor*(np.matmul(_Wa_2, _E_k_2) - (-1/_Wc_2[3][3]*np.matmul(_Wc_2[3][0:3], _E_k_2)))*_E_transpose_2
+            _Wa_2 -= _zeta_actor*(np.matmul(_Wa_2, _E_k_2) -
+                                  (-1/_Wc_2[3][3]*np.matmul(_Wc_2[3][0:3], _E_k_2)))*_E_transpose_2
 
             # Updates
             _E_k_1 = _E_k1_1
@@ -296,27 +326,27 @@ The eigenvalues of matrix Q2 are:
 
         plt.figure(1)
         plt.subplot(2, 1, 1)
-        plt.plot(2*t, self.j1_traj)
-        plt.plot(2*t[1:], self.algorithm_j1)
+        plt.plot(2*t, np.rad2deg(self.j1_traj))
+        plt.plot(2*t[1:], np.rad2deg(self.algorithm_j1))
         plt.legend(['nominal', 'actual'])
 
         plt.subplot(2, 1, 2)
-        plt.plot(2*t, self.j2_traj)
-        plt.plot(2*t[1:], self.algorithm_j2)
+        plt.plot(2*t, np.rad2deg(self.j2_traj))
+        plt.plot(2*t[1:], np.rad2deg(self.algorithm_j2))
         plt.legend(['nominal', 'actual'])
         plt.show()
 
         plt.figure(2)
         plt.subplot(2, 1, 1)
         plt.plot(_k_lst, np.array(_Wa_1_1))
-        plt.plot(_k_lst, np.array(_Wa_1_2))
-        plt.plot(_k_lst, np.array(_Wa_1_3))
+        # plt.plot(_k_lst, np.array(_Wa_1_2))
+        # plt.plot(_k_lst, np.array(_Wa_1_3))
         plt.legend(['Wa1_1', 'Wa1_2', 'Wa1_3'])
 
         plt.subplot(2, 1, 2)
-        plt.plot(_k_lst, np.array(_Wa_2_1))
-        plt.plot(_k_lst, np.array(_Wa_2_2))
-        plt.plot(_k_lst, np.array(_Wa_2_3))
+        plt.plot(_k_lst[0:20], np.array(_Wa_2_1[0:20]))
+        # plt.plot(_k_lst, np.array(_Wa_2_2))
+        # plt.plot(_k_lst, np.array(_Wa_2_3))
         plt.legend(['Wa2_1', 'Wa2_2', 'Wa2_3'])
         plt.show()
 
