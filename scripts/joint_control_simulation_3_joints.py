@@ -394,17 +394,17 @@ The eigenvalues of matrix Q3 are:
         print("******************************************************************")
         self.signal_update()
 
-        t = np.arange(0, self.end_time + self.Ts, step=self.Ts)
+        t = np.arange(0, self.end_time, step=self.Ts)
 
         idx = [1, 2, 3]
-        nom = [self.j1_traj, self.j2_traj, self.j3_traj]
+        nom = [self.j1_traj[:-1], self.j2_traj[:-1], self.j3_traj[:-1]]
         algo = [self.algorithm_j1, self.algorithm_j2, self.algorithm_j3]
 
         plt.figure(1)
         for i, n, a in zip(idx, nom, algo):
             plt.subplot(3, 1, i)
             plt.plot(t, np.rad2deg(n))
-            plt.plot(t[1:], np.rad2deg(a))
+            plt.plot(t, np.rad2deg(a))
             plt.title('Joint {0} Angle vs. Time'.format(i))
             plt.xlabel('Time steps, t (s)')
             plt.ylabel('Joint {}  Angle, (Degrees)'.format(i))
@@ -414,24 +414,45 @@ The eigenvalues of matrix Q3 are:
 
         plt.figure(2)
         plt.subplot(3, 1, 1)
-        plt.plot(t[1:], np.array(_Wa_1_1))
-        plt.plot(t[1:], np.array(_Wa_1_2))
-        plt.plot(t[1:], np.array(_Wa_1_3))
+        plt.plot(t, np.array(_Wa_1_1))
+        plt.plot(t, np.array(_Wa_1_2))
+        plt.plot(t, np.array(_Wa_1_3))
         plt.legend(['Wa1_1', 'Wa1_2', 'Wa1_3'])
 
         plt.subplot(3, 1, 2)
-        plt.plot(t[1:], np.array(_Wa_2_1))
-        plt.plot(t[1:], np.array(_Wa_2_2))
-        plt.plot(t[1:], np.array(_Wa_2_3))
+        plt.plot(t, np.array(_Wa_2_1))
+        plt.plot(t, np.array(_Wa_2_2))
+        plt.plot(t, np.array(_Wa_2_3))
         plt.legend(['Wa2_1', 'Wa2_2', 'Wa2_3'])
 
         plt.subplot(3, 1, 3)
-        plt.plot(t[1:], np.array(_Wa_3_1))
-        plt.plot(t[1:], np.array(_Wa_3_2))
-        plt.plot(t[1:], np.array(_Wa_3_3))
+        plt.plot(t, np.array(_Wa_3_1))
+        plt.plot(t, np.array(_Wa_3_2))
+        plt.plot(t, np.array(_Wa_3_3))
         plt.legend(['Wa3_1', 'Wa3_2', 'Wa3_3'])
         plt.tight_layout()
         plt.show()
+
+        data = np.concatenate((t.reshape(-1, 1),
+                               np.rad2deg(np.array(self.j1_traj[:-1]).reshape(-1, 1)),
+                               np.rad2deg(np.array(self.j2_traj[:-1]).reshape(-1, 1)),
+                               np.rad2deg(np.array(self.j3_traj[:-1]).reshape(-1, 1)),
+                               np.rad2deg(np.array(self.algorithm_j1).reshape(-1, 1)),
+                               np.rad2deg(np.array(self.algorithm_j2).reshape(-1, 1)),
+                               np.rad2deg(np.array(self.algorithm_j3).reshape(-1, 1)),
+                               np.array(_Wa_1_1).reshape(-1, 1),
+                               np.array(_Wa_1_2).reshape(-1, 1),
+                               np.array(_Wa_1_3).reshape(-1, 1),
+                               np.array(_Wa_2_1).reshape(-1, 1),
+                               np.array(_Wa_2_2).reshape(-1, 1),
+                               np.array(_Wa_2_3).reshape(-1, 1),
+                               np.array(_Wa_3_1).reshape(-1, 1),
+                               np.array(_Wa_3_2).reshape(-1, 1),
+                               np.array(_Wa_3_3).reshape(-1, 1)), axis=1)
+
+        filename = str(raw_input("Enter a filename:"))
+        filepath = '/home/derek/catkin_ws/src/rose_ieee/scripts/Data/' + filename + '.csv'
+        np.savetxt(filepath, data, delimiter=',')
 
         # while not rospy.is_shutdown():
         #     # self.nominal_trajectory()
@@ -450,7 +471,7 @@ if __name__ == '__main__':
         # unpause_gazebo = rospy.ServiceProxy('/gazebo/unpause_physics', Empty)
         # resp = unpause_gazebo()
 
-        rt = RandomTrajectory([0.0, np.pi/2, np.pi, -2.1, np.pi, 0.0], freq=2.0, runtime=60.0)
+        rt = RandomTrajectory([0.0, np.pi/2, np.pi, -2.1, np.pi, 0.0], freq=2.0, runtime=10.0)
         # rt = RandomTrajectory([0.0, 2.0, 1.3, -2.1, 1.4, 0.0], freq=2.0, runtime=60.0)
         # rt = RandomTrajectory(np.deg2rad([180, 270, 90, 270, 270, 270]))
         rt.trajectory_calculator()
