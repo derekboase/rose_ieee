@@ -193,7 +193,6 @@ The eigenvalues of matrix Q are:
             _eqe = np.matmul(np.matmul(_E_transpose, _Q), _E_k)
             _uru = _u_hat*_R*_u_hat
             # print('For k={0}\nE^TQE={1}\nu^TRu={2}\nu_hat={3}'.format(_k, _eqe, _uru, _u_hat))
-            print('For k={0}\nu_hat={1}\nWa={2}'.format(_k, _u_hat, _Wa_1))
             _U_k = 1/2.0 * (_eqe + _uru)
 
             # Get E(k + 1), u_hat and V(k_1): Step 9 for Joint 1 Position
@@ -216,6 +215,8 @@ The eigenvalues of matrix Q are:
             # Updates
             _E_k = _E_k1
             _k += 1
+            print(self.actual_positions)
+            # print('For k={0}\nu_hat={1}\nWa={2}'.format(_k, _u_hat, _Wa_1))
 
         return _Wc_1, _Wa_1
 
@@ -232,10 +233,10 @@ The eigenvalues of matrix Q are:
         # print("******************************************************************")
         # self.nominal_trajectory()
         time.sleep(0.5)
-        # print("******************************************************************")
-        # print("\t\t\tAlgorithm Motion")
-        # print("******************************************************************")
-        # self.signal_update()
+        print("******************************************************************")
+        print("\t\t\tAlgorithm Motion")
+        print("******************************************************************")
+        self.signal_update()
 
         plt.figure(1)
         plt.subplot(2, 1, 1)

@@ -95,7 +95,7 @@ class RandomTrajectory:
     def actual_values(self, real_joint_angles):
         self.actual_positions = np.array(real_joint_angles.position[0:6])
         self.actual_velocities = np.array(real_joint_angles.velocity[0:6])
-        # print('The current value of J1 is {}'.format(self.actual_positions[0]))
+        # print('The current value of J1 is {}'.format(self.actual_positions))
 
     def move_joint_home(self):
         """
@@ -227,7 +227,7 @@ class RandomTrajectory:
 
         _Wa_1[0, 1] *= -1
         _Wa_2[0, 1] *= -1
-        _Wa_3[0, 2] *= -1
+        _Wa_3[0, 1] *= -1
 
         print('''Wc_1 is:
 {0} 
@@ -278,8 +278,8 @@ The eigenvalues of matrix Q3 are:
             _u_hat_3 = bound(-0.3, 0.3, float(np.matmul(_Wa_3, _E_k_3)))  # shape(1,)
 
             next_tar[0] += _u_hat_1  # shape(1,)
-            # next_tar[1] += _u_hat_2  # shape(1,)
-            # next_tar[2] += _u_hat_3
+            next_tar[1] += _u_hat_2  # shape(1,)
+            next_tar[2] += _u_hat_3
 
             self.update_target(next_tar)
             self.algorithm_j1.append(self.actual_positions[0])  # For the sole purpose of plotting
@@ -296,7 +296,6 @@ The eigenvalues of matrix Q3 are:
             _eqe_1 = np.matmul(np.matmul(_E_transpose_1, _Q_1), _E_k_1)
             _uru_1 = _u_hat_1*_R_1*_u_hat_1
             _U_k_1 = 1 / 2.0 * (_eqe_1 + _uru_1)
-            print('For k={0}\nu_hat1={1}\nWa1={2}'.format(_k, _u_hat_1, _Wa_1))
 
             # Find V and U: Step 8 for Joint 2 Position
             _Eu_concat_2 = np.concatenate((_E_k_2, _u_hat_2.reshape(-1, 1)), axis=0)
@@ -306,7 +305,6 @@ The eigenvalues of matrix Q3 are:
             _eqe_2 = np.matmul(np.matmul(_E_transpose_2, _Q_2), _E_k_2)
             _uru_2 = _u_hat_2*_R_2*_u_hat_2
             _U_k_2 = 1 / 2.0 * (_eqe_2 + _uru_2)
-            print('u_hat2={0}\nWa2={1}'.format(_u_hat_2, _Wa_2))
 
             # Find V and U: Step 8 for Joint 3 Position
             _Eu_concat_3 = np.concatenate((_E_k_3, _u_hat_3.reshape(-1, 1)), axis=0)
@@ -316,7 +314,6 @@ The eigenvalues of matrix Q3 are:
             _eqe_3 = np.matmul(np.matmul(_E_transpose_3, _Q_2), _E_k_3)
             _uru_3 = _u_hat_3*_R_2*_u_hat_3
             _U_k_3 = 1 / 2.0 * (_eqe_3 + _uru_3)
-            print('u_hat3={0}\nWa3={1}'.format(_u_hat_3, _Wa_3))
 
             # Get E(k + 1), u_hat and V(k_1): Step 9 for Joint 1 Position
             _E_k1_1[2] = _E_k_1[1]
@@ -372,6 +369,10 @@ The eigenvalues of matrix Q3 are:
             _E_k_3 = _E_k1_3
             _k += 1
 
+            print('For k={0}\nu_hat1={1}\nWa1={2}'.format(_k, _u_hat_1, _Wa_1))
+            print('u_hat2={0}\nWa2={1}'.format(_u_hat_2, _Wa_2))
+            print('u_hat3={0}\nWa3={1}'.format(_u_hat_3, _Wa_3))
+
         return _Wc_1, _Wa_1, _Wc_2, _Wa_2, _Wc_3, _Wa_3
 
     def start(self):
@@ -388,7 +389,7 @@ The eigenvalues of matrix Q3 are:
         # print("******************************************************************")
         # self.nominal_trajectory()
 
-        time.sleep(0.1)
+        time.sleep(0.5)
         print("******************************************************************")
         print("\t\t\tAlgorithm Motion")
         print("******************************************************************")
@@ -471,7 +472,8 @@ if __name__ == '__main__':
         # unpause_gazebo = rospy.ServiceProxy('/gazebo/unpause_physics', Empty)
         # resp = unpause_gazebo()
 
-        rt = RandomTrajectory([0.0, np.pi/2, np.pi, -2.1, np.pi, 0.0], freq=2.0, runtime=120.0)
+        # rt = RandomTrajectory([0.0, 2.9, 1.3, -2.1, 1.4, 0.0], freq=10.0, runtime=60.0)
+        rt = RandomTrajectory([0.0, np.pi/2, np.pi, -2.1, np.pi, 0.0], freq=10.0, runtime=120.0)
         # rt = RandomTrajectory([0.0, 2.0, 1.3, -2.1, 1.4, 0.0], freq=2.0, runtime=60.0)
         # rt = RandomTrajectory(np.deg2rad([180, 270, 90, 270, 270, 270]))
         rt.trajectory_calculator()

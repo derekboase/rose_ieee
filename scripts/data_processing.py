@@ -2,9 +2,8 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 
-# filename = str(raw_input("Enter a filename:"))
-filename = 'test'
-filepath = '/home/derek/catkin_ws/src/rose_ieee/scripts/Data/' + filename + '.csv'
+filename = str(raw_input("Enter a filename:"))
+filepath = '/home/derek/catkin_ws/src/rose_ieee/scripts/Data/distributed_weight_all_joints/' + filename + '.csv'
 col_headers = ['time',
                'Joint 1 Nominal',
                'Joint 2 Nominal',
