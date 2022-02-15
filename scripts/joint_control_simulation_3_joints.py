@@ -59,6 +59,7 @@ class RandomTrajectory:
         # IMPROVE THIS BY MAKING IT ONE LARGE ARRAY CAllED self.traj with dimensions
         self.j1_traj = []
         self.j2_traj = []
+        self.j3_traj = []
 
         self.actual_positions = np.zeros((1, 6))
         self.actual_velocities = np.zeros((1, 6))
@@ -67,6 +68,7 @@ class RandomTrajectory:
 
         self.algorithm_j1 = []
         self.algorithm_j2 = []
+        self.algorithm_j3 = []
 
     def trajectory_calculator(self):
         """
@@ -82,9 +84,11 @@ class RandomTrajectory:
             # if t <= self.end_time*4/5:
             if t <= self.end_time/2.0:
                 self.j1_traj.append(_amplitude * (1 - np.exp(-t/_tau)))
+                self.j3_traj.append(np.pi)
 
             else:
                 self.j1_traj.append(_amplitude * np.exp(-(t - self.end_time/2)/_tau))
+                self.j3_traj.append(4.0*np.pi/5.0)
                 # self.j1_traj.append(0)
         self.j2_traj = np.linspace(np.pi/2, 5.0*np.pi/6, num=len(_time))
 
@@ -111,10 +115,11 @@ class RandomTrajectory:
         self.rate = rospy.Rate(1/self.Ts)
 
     def nominal_trajectory(self):
-        for j1, j2 in zip(self.j1_traj, self.j2_traj):
+        for j1, j2, j3 in zip(self.j1_traj, self.j2_traj, self.j3_traj):
             next_tar = np.array(self.current_joints)
             next_tar[0] = j1
             next_tar[1] = j2
+            next_tar[2] = j3
             self.update_target(next_tar)
             # print(self.point)
             # while True:
@@ -135,11 +140,14 @@ class RandomTrajectory:
         self.jointCmd.points.append(self.point)
 
     def signal_update(self):
-        global _Wa_1_1, _Wa_1_2, _Wa_1_3, _k_lst
+        global _Wa_1_1, _Wa_1_2, _Wa_1_3#, _k_lst
         global _Wa_2_1, _Wa_2_2, _Wa_2_3
+        global _Wa_3_1, _Wa_3_2, _Wa_3_3
 
-        _Wa_1_1, _Wa_1_2, _Wa_1_3, _k_lst = [], [], [], []
+        # _Wa_1_1, _Wa_1_2, _Wa_1_3, _k_lst = [], [], [], []
+        _Wa_1_1, _Wa_1_2, _Wa_1_3 = [], [], []
         _Wa_2_1, _Wa_2_2, _Wa_2_3 = [], [], []
+        _Wa_3_1, _Wa_3_2, _Wa_3_3 = [], [], []
 
 
         # Initialization of algorithm constants
@@ -150,6 +158,8 @@ class RandomTrajectory:
         # _R_1 = generate_SPD_matrix(1)
         # _Q_2 = generate_SPD_matrix(3)
         # _R_2 = generate_SPD_matrix(1)
+        # _Q_3 = generate_SPD_matrix(3)
+        # _R_3 = generate_SPD_matrix(1)
 
         _Q_1 = np.array([[0.51502986, 0.25789362, 0.06580822],
                          [0.25789362, 0.19214249, 0.0747135],
@@ -161,8 +171,14 @@ class RandomTrajectory:
                           [0.4799643, 0.2456848, 0.38590322]])
         _R_2 = np.array([[0.00876479]])
 
+        _Q_3 = np.array([[ 0.74236587,  0.51836226,  0.63922965],
+                         [ 0.51836226,  0.4169774,   0.46758112],
+                         [ 0.63922965,  0.46758112,  0.60571963]])
+        _R_3 = np.array([[ 0.49362862]])
+
         lam1, vec1 = np.linalg.eig(_Q_1)
         lam2, vec2 = np.linalg.eig(_Q_2)
+        lam3, vec3 = np.linalg.eig(_Q_3)
 
         delta_conv, window_conv = 1e-2, _N/10
 
@@ -174,8 +190,12 @@ class RandomTrajectory:
         _E_k_2 = np.zeros((3, 1))  # shape(3, 1)
         _E_k1_2 = np.zeros((3, 1))  # shape(3, 1)
 
+        _E_k_3 = np.zeros((3, 1))  # shape(3, 1)
+        _E_k1_3 = np.zeros((3, 1))  # shape(3, 1)
+
         # _Wc_1 = generate_SPD_matrix(4)  # shape(4, 4)
         # _Wc_2 = generate_SPD_matrix(4)
+        # _Wc_3 = generate_SPD_matrix(4)
 
         _Wc_1 = np.array([[ 0.80349833,  0.30936819,  0.84494049,  0.71454207],
                           [ 0.30936819,  0.21330422,  0.31156708,  0.36979277],
@@ -186,6 +206,11 @@ class RandomTrajectory:
                           [ 0.49183218, 0.66047158, 0.78537323, 0.5942725 ],
                           [ 0.54214396,  0.78537323, 1.15277585, 0.89469537],
                           [ 0.52932378, 0.5942725,  0.89469537, 1.05989052]])
+
+        _Wc_3 = np.array([[ 0.55194991,  0.39823089,  0.37660518,  0.25485893],
+                          [ 0.39823089,  0.51537725,  0.42651551,  0.33597899],
+                          [ 0.37660518,  0.42651551,  0.40267321,  0.35263482],
+                          [ 0.25485893,  0.33597899,  0.35263482,  0.48075655]])
 
         noise = 0.15
         _Wa_1 = (1/_Wc_1[3][3]*_Wc_1[3][0:3]).reshape(1, 3)  # shape(1, 3) NEGATED
@@ -198,8 +223,11 @@ class RandomTrajectory:
         # _Wa_2[0, 1] = _Wa_2[0, 1] + np.random.normal(scale=noise)
         # _Wa_2[0, 2] = _Wa_2[0, 2] + np.random.normal(scale=noise)
 
+        _Wa_3 = (1 / _Wc_3[3][3] * _Wc_3[3][0:3]).reshape(1, 3)  # shape(1, 3) NEGATED
+
         _Wa_1[0, 1] *= -1
         _Wa_2[0, 1] *= -1
+        _Wa_3[0, 2] *= -1
 
         print('''Wc_1 is:
 {0} 
@@ -219,6 +247,15 @@ The matrix R2 is:
 The eigenvalues of matrix Q2 are:
 {3}'''.format(_Wc_2, _Q_2, _R_2, lam2))
 
+        print('''Wc_3 is:
+{0} 
+The matrix Q3 is:
+{1}
+The matrix R3 is:
+{2}
+The eigenvalues of matrix Q3 are:
+{3}'''.format(_Wc_3, _Q_3, _R_3, lam3))
+
         next_tar = np.array(self.current_joints)  # load the next target variable with the current joints
 
         while _k < _N and not _weights_conv:
@@ -230,17 +267,24 @@ The eigenvalues of matrix Q2 are:
             _Wa_2_2.append(_Wa_2[0, 1])
             _Wa_2_3.append(_Wa_2[0, 2])
 
-            _k_lst.append(_k)
-            # Calculate the control signal: Step 6 for Joint 1 Position
+            _Wa_3_1.append(_Wa_3[0, 0])
+            _Wa_3_2.append(_Wa_3[0, 1])
+            _Wa_3_3.append(_Wa_3[0, 2])
+
+            # _k_lst.append(_k)
+            # Calculate the control signal: Step 6
             _u_hat_1 = bound(-0.35, 0.35, float(np.matmul(_Wa_1, _E_k_1)))  # shape(1,)
             _u_hat_2 = bound(-0.35, 0.35, float(np.matmul(_Wa_2, _E_k_2)))  # shape(1,)
+            _u_hat_3 = bound(-0.3, 0.3, float(np.matmul(_Wa_3, _E_k_3)))  # shape(1,)
 
-            next_tar[0] += _u_hat_1  # shape(1,)
-            next_tar[1] += _u_hat_2  # shape(1,)
+            # next_tar[0] += _u_hat_1  # shape(1,)
+            # next_tar[1] += _u_hat_2  # shape(1,)
+            next_tar[2] += _u_hat_3
 
             self.update_target(next_tar)
             self.algorithm_j1.append(self.actual_positions[0])  # For the sole purpose of plotting
             self.algorithm_j2.append(self.actual_positions[1])  # For the sole purpose of plotting
+            self.algorithm_j3.append(self.actual_positions[2])  # For the sole purpose of plotting
             self.pub.publish(self.jointCmd)  # Publish the
             self.rate.sleep()
 
@@ -262,7 +306,17 @@ The eigenvalues of matrix Q2 are:
             _eqe_2 = np.matmul(np.matmul(_E_transpose_2, _Q_2), _E_k_2)
             _uru_2 = _u_hat_2*_R_2*_u_hat_2
             _U_k_2 = 1 / 2.0 * (_eqe_2 + _uru_2)
-            print('For k={0}\nu_hat2={1}\nWa2={2}'.format(_k, _u_hat_2, _Wa_2))
+            print('u_hat2={0}\nWa2={1}'.format(_u_hat_2, _Wa_2))
+
+            # Find V and U: Step 8 for Joint 3 Position
+            _Eu_concat_3 = np.concatenate((_E_k_3, _u_hat_3.reshape(-1, 1)), axis=0)
+            _Eu_transpose_3 = np.transpose(_Eu_concat_3)
+            _V_k_3 = 1/2.0 * np.matmul(np.matmul(_Eu_transpose_3, _Wc_3), _Eu_concat_3)
+            _E_transpose_3 = np.transpose(_E_k_3)
+            _eqe_3 = np.matmul(np.matmul(_E_transpose_3, _Q_2), _E_k_3)
+            _uru_3 = _u_hat_3*_R_2*_u_hat_3
+            _U_k_3 = 1 / 2.0 * (_eqe_3 + _uru_3)
+            print('u_hat3={0}\nWa3={1}'.format(_u_hat_3, _Wa_3))
 
             # Get E(k + 1), u_hat and V(k_1): Step 9 for Joint 1 Position
             _E_k1_1[2] = _E_k_1[1]
@@ -274,6 +328,11 @@ The eigenvalues of matrix Q2 are:
             _E_k1_2[1] = _E_k_2[0]
             _E_k1_2[0] = self.j2_traj[_k + 1] - self.actual_positions[1]
 
+            # Get E(k + 1), u_hat and V(k_1): Step 9 for Joint 3 Position
+            _E_k1_3[2] = _E_k_3[1]
+            _E_k1_3[1] = _E_k_3[0]
+            _E_k1_3[0] = self.j3_traj[_k + 1] - self.actual_positions[2]
+
             _u_hat_k1_1 = bound(-0.35, 0.35, float(np.matmul(_Wa_1, _E_k1_1)))  # shape(1,)
             _Z_1 = np.concatenate((_E_k1_1, _u_hat_k1_1.reshape(-1, 1)), axis=0)
             _Z_trans_1 = np.transpose(_Z_1)
@@ -283,6 +342,11 @@ The eigenvalues of matrix Q2 are:
             _Z_2 = np.concatenate((_E_k1_2, _u_hat_k1_2.reshape(-1, 1)), axis=0)
             _Z_trans_2 = np.transpose(_Z_2)
             _V_k1_2 = 1 / 2.0 * np.matmul(np.matmul(_Z_trans_2, _Wc_2), _Z_2)
+
+            _u_hat_k1_3 = bound(-0.35, 0.35, float(np.matmul(_Wa_3, _E_k1_3)))  # shape(1,)
+            _Z_3 = np.concatenate((_E_k1_3, _u_hat_k1_3.reshape(-1, 1)), axis=0)
+            _Z_trans_3 = np.transpose(_Z_3)
+            _V_k1_3 = 1 / 2.0 * np.matmul(np.matmul(_Z_trans_3, _Wc_3), _Z_3)
 
             # Update critic weights: Step 11 for Joint 1 Position
             temp = _zeta_critic*(_V_k_1 - (_U_k_1 + _V_k1_1))
@@ -296,12 +360,19 @@ The eigenvalues of matrix Q2 are:
             _Wa_2 -= _zeta_actor*(np.matmul(_Wa_2, _E_k_2) -
                                   (-1/_Wc_2[3][3]*np.matmul(_Wc_2[3][0:3], _E_k_2)))*_E_transpose_2
 
+            # Update critic weights: Step 11 for Joint 3 Position
+            temp = _zeta_critic*(_V_k_3 - (_U_k_2 + _V_k1_3))
+            _Wc_3 -= temp*np.matmul(_Z_3, _Z_trans_3)
+            _Wa_3 -= _zeta_actor*(np.matmul(_Wa_3, _E_k_3) -
+                                  (-1/_Wc_3[3][3]*np.matmul(_Wc_3[3][0:3], _E_k_3)))*_E_transpose_3
+
             # Updates
             _E_k_1 = _E_k1_1
             _E_k_2 = _E_k1_2
+            _E_k_3 = _E_k1_3
             _k += 1
 
-        return _Wc_1, _Wa_1
+        return _Wc_1, _Wa_1, _Wc_2, _Wa_2, _Wc_3, _Wa_3
 
     def start(self):
         """(self) -> None
@@ -312,27 +383,26 @@ The eigenvalues of matrix Q2 are:
         # rospy.Subscriber('/j2s6s200_driver/out/joint_states', JointState, self.actual_values)  # Real bot
         self.move_joint_home()
 
-        print("******************************************************************")
-        print("\t\t\tNominal Motion")
-        print("******************************************************************")
-        self.nominal_trajectory()
+        # print("******************************************************************")
+        # print("\t\t\tNominal Motion")
+        # print("******************************************************************")
+        # self.nominal_trajectory()
 
-        # time.sleep(0.1)
-        # print("******************************************************************")
-        # print("\t\t\tAlgorithm Motion")
-        # print("******************************************************************")
-        # self.signal_update()
+        time.sleep(0.1)
+        print("******************************************************************")
+        print("\t\t\tAlgorithm Motion")
+        print("******************************************************************")
+        self.signal_update()
 
         t = np.arange(0, self.end_time + self.Ts, step=self.Ts)
 
-        idx = [1, 2]
-        nom = [self.j1_traj, self.j2_traj]
-        algo = [self.algorithm_j1, self.algorithm_j2]
-
+        idx = [1, 2, 3]
+        nom = [self.j1_traj, self.j2_traj, self.j3_traj]
+        algo = [self.algorithm_j1, self.algorithm_j2, self.algorithm_j3]
 
         plt.figure(1)
         for i, n, a in zip(idx, nom, algo):
-            plt.subplot(2, 1, i)
+            plt.subplot(3, 1, i)
             plt.plot(t, np.rad2deg(n))
             plt.plot(t[1:], np.rad2deg(a))
             plt.title('Joint {0} Angle vs. Time'.format(i))
@@ -340,19 +410,27 @@ The eigenvalues of matrix Q2 are:
             plt.ylabel('Joint {}  Angle, (Degrees)'.format(i))
             plt.grid()
             plt.legend(['nominal', 'actual'])
+        plt.tight_layout()
 
         plt.figure(2)
-        plt.subplot(2, 1, 1)
-        plt.plot(_k_lst, np.array(_Wa_1_1))
-        plt.plot(_k_lst, np.array(_Wa_1_2))
-        plt.plot(_k_lst, np.array(_Wa_1_3))
+        plt.subplot(3, 1, 1)
+        plt.plot(t[1:], np.array(_Wa_1_1))
+        plt.plot(t[1:], np.array(_Wa_1_2))
+        plt.plot(t[1:], np.array(_Wa_1_3))
         plt.legend(['Wa1_1', 'Wa1_2', 'Wa1_3'])
 
-        plt.subplot(2, 1, 2)
-        plt.plot(_k_lst[0:20], np.array(_Wa_2_1[0:20]))
-        plt.plot(_k_lst, np.array(_Wa_2_2))
-        plt.plot(_k_lst, np.array(_Wa_2_3))
+        plt.subplot(3, 1, 2)
+        plt.plot(t[1:], np.array(_Wa_2_1))
+        plt.plot(t[1:], np.array(_Wa_2_2))
+        plt.plot(t[1:], np.array(_Wa_2_3))
         plt.legend(['Wa2_1', 'Wa2_2', 'Wa2_3'])
+
+        plt.subplot(3, 1, 3)
+        plt.plot(t[1:], np.array(_Wa_3_1))
+        plt.plot(t[1:], np.array(_Wa_3_2))
+        plt.plot(t[1:], np.array(_Wa_3_3))
+        plt.legend(['Wa3_1', 'Wa3_2', 'Wa3_3'])
+        plt.tight_layout()
         plt.show()
 
         # while not rospy.is_shutdown():
@@ -372,7 +450,7 @@ if __name__ == '__main__':
         # unpause_gazebo = rospy.ServiceProxy('/gazebo/unpause_physics', Empty)
         # resp = unpause_gazebo()
 
-        rt = RandomTrajectory([0.0, np.pi/2, np.pi, -2.1, np.pi, 0.0], freq=2.0, runtime=20.0)
+        rt = RandomTrajectory([0.0, np.pi/2, np.pi, -2.1, np.pi, 0.0], freq=2.0, runtime=60.0)
         # rt = RandomTrajectory([0.0, 2.0, 1.3, -2.1, 1.4, 0.0], freq=2.0, runtime=60.0)
         # rt = RandomTrajectory(np.deg2rad([180, 270, 90, 270, 270, 270]))
         rt.trajectory_calculator()
