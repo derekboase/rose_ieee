@@ -212,7 +212,7 @@ class RandomTrajectory:
                           [ 0.37660518,  0.42651551,  0.40267321,  0.35263482],
                           [ 0.25485893,  0.33597899,  0.35263482,  0.48075655]])
 
-        noise = 0.15
+        noise = 0.1
         _Wa_1 = (1/_Wc_1[3][3]*_Wc_1[3][0:3]).reshape(1, 3)  # shape(1, 3) NEGATED
         _Wa_1[0, 0] += np.random.normal(scale=noise/2.0)
         _Wa_1[0, 1] += np.random.normal(scale=noise/2.0)
@@ -374,7 +374,6 @@ The eigenvalues of matrix Q3 are:
             _E_k_3 = _E_k1_3
             _k += 1
 
-            print()
 
             # print('For k={0}\nu_hat1={1}\nWa1={2}'.format(_k, _u_hat_1, _Wa_1))
             # print('u_hat2={0}\nWa2={1}'.format(_u_hat_2, _Wa_2))
@@ -389,7 +388,7 @@ The eigenvalues of matrix Q3 are:
         """
         # rospy.Subscriber('/j2s6s200/joint_states', JointState, self.actual_values)  # Simulation
         rospy.Subscriber('/j2s6s200_driver/out/joint_state', JointState, self.actual_values)  # Real bot
-        self.move_joint_home()
+        # self.move_joint_home()
 
         # print("******************************************************************")
         # print("\t\t\tNominal Motion")
@@ -459,7 +458,7 @@ The eigenvalues of matrix Q3 are:
                                np.array(_Wa_3_3).reshape(-1, 1)), axis=1)
 
         filename = str(raw_input("Enter a filename:"))
-        filepath = '/home/derek/catkin_ws/src/rose_ieee/scripts/Data/' + filename + '.csv'
+        filepath = '/home/derek/catkin_ws/src/rose_ieee/scripts/Data/8Hz/' + filename + '.csv'
         np.savetxt(filepath, data, delimiter=',')
 
         # while not rospy.is_shutdown():
