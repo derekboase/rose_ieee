@@ -214,14 +214,19 @@ class RandomTrajectory:
 
         noise = 0.15
         _Wa_1 = (1/_Wc_1[3][3]*_Wc_1[3][0:3]).reshape(1, 3)  # shape(1, 3) NEGATED
-        # _Wa_1[0, 0] = _Wa_1[0, 0] + np.random.normal(scale=noise)
-        # _Wa_1[0, 1] = _Wa_1[0, 1] + np.random.normal(scale=noise)
-        # _Wa_1[0, 2] = _Wa_1[0, 2] + np.random.normal(scale=noise)
+        _Wa_1[0, 0] += np.random.normal(scale=noise/2.0)
+        _Wa_1[0, 1] += np.random.normal(scale=noise/2.0)
+        _Wa_1[0, 2] += np.random.normal(scale=noise/2.0)
 
         _Wa_2 = (1/_Wc_2[3][3]*_Wc_2[3][0:3]).reshape(1, 3)  # shape(1, 3) NEGATED
-        # _Wa_2[0, 0] = _Wa_2[0, 0] + np.random.normal(scale=noise)
-        # _Wa_2[0, 1] = _Wa_2[0, 1] + np.random.normal(scale=noise)
-        # _Wa_2[0, 2] = _Wa_2[0, 2] + np.random.normal(scale=noise)
+        _Wa_2[0, 0] += np.random.normal(scale=noise)
+        _Wa_2[0, 1] += np.random.normal(scale=noise)
+        _Wa_2[0, 2] += np.random.normal(scale=noise)
+
+        _Wa_3 = (1/_Wc_3[3][3]*_Wc_3[3][0:3]).reshape(1, 3)  # shape(1, 3) NEGATED
+        _Wa_3[0, 0] += np.random.normal(scale=noise)
+        _Wa_3[0, 1] += np.random.normal(scale=noise)
+        _Wa_3[0, 2] += np.random.normal(scale=noise)
 
         _Wa_3 = (1 / _Wc_3[3][3] * _Wc_3[3][0:3]).reshape(1, 3)  # shape(1, 3) NEGATED
 
@@ -369,9 +374,11 @@ The eigenvalues of matrix Q3 are:
             _E_k_3 = _E_k1_3
             _k += 1
 
-            print('For k={0}\nu_hat1={1}\nWa1={2}'.format(_k, _u_hat_1, _Wa_1))
-            print('u_hat2={0}\nWa2={1}'.format(_u_hat_2, _Wa_2))
-            print('u_hat3={0}\nWa3={1}'.format(_u_hat_3, _Wa_3))
+            print()
+
+            # print('For k={0}\nu_hat1={1}\nWa1={2}'.format(_k, _u_hat_1, _Wa_1))
+            # print('u_hat2={0}\nWa2={1}'.format(_u_hat_2, _Wa_2))
+            # print('u_hat3={0}\nWa3={1}'.format(_u_hat_3, _Wa_3))
 
         return _Wc_1, _Wa_1, _Wc_2, _Wa_2, _Wc_3, _Wa_3
 
@@ -382,7 +389,7 @@ The eigenvalues of matrix Q3 are:
         """
         # rospy.Subscriber('/j2s6s200/joint_states', JointState, self.actual_values)  # Simulation
         rospy.Subscriber('/j2s6s200_driver/out/joint_state', JointState, self.actual_values)  # Real bot
-        # self.move_joint_home()
+        self.move_joint_home()
 
         # print("******************************************************************")
         # print("\t\t\tNominal Motion")
@@ -473,7 +480,7 @@ if __name__ == '__main__':
         # resp = unpause_gazebo()
 
         # rt = RandomTrajectory([0.0, 2.9, 1.3, -2.1, 1.4, 0.0], freq=10.0, runtime=60.0)
-        rt = RandomTrajectory([0.0, np.pi/2, np.pi, -2.1, np.pi, 0.0], freq=10.0, runtime=120.0)
+        rt = RandomTrajectory([0.0, np.pi/2, np.pi, -2.1, np.pi, 0.0], freq=8.0, runtime=120.0)
         # rt = RandomTrajectory([0.0, 2.0, 1.3, -2.1, 1.4, 0.0], freq=2.0, runtime=60.0)
         # rt = RandomTrajectory(np.deg2rad([180, 270, 90, 270, 270, 270]))
         rt.trajectory_calculator()

@@ -29,8 +29,8 @@ def bound(low, high, val):
 class RandomTrajectory:
     def __init__(self, home_joints, freq=10.0, runtime=10.0):
         # All the setup stuff for the nodes and topics
-        # self.topic_name = '/j2s6s200/effort_joint_trajectory_controller/command'  # Simulation
-        self.topic_name = '/j2s6s200_driver/trajectory_controller/command'  # Real bot
+        self.topic_name = '/j2s6s200/effort_joint_trajectory_controller/command'  # Simulation
+        # self.topic_name = '/j2s6s200_driver/trajectory_controller/command'  # Real bot
         self.pub = rospy.Publisher(self.topic_name, JointTrajectory, queue_size=10)
         # Instantiation of messages and names
         self.jointCmd = JointTrajectory()
@@ -102,7 +102,7 @@ class RandomTrajectory:
         This function moves the manipulator arm to the
         :return:
         """
-        time_to_home = 3.0
+        time_to_home = 1.0
         self.rate = rospy.Rate(10.0)
         self.jointCmd.header.stamp = rospy.Time.now() + rospy.Duration.from_sec(0.0)
         self.point.time_from_start = rospy.Duration.from_sec(time_to_home)
@@ -291,12 +291,12 @@ The eigenvalues of matrix Q3 are:
             # Find V and U: Step 8 for Joint 1 Position
             _Eu_concat_1 = np.concatenate((_E_k_1, _u_hat_1.reshape(-1, 1)), axis=0)
             _Eu_transpose_1 = np.transpose(_Eu_concat_1)
-            _V_k_1 = 1/2.0 * np.matmul(np.matmul(_Eu_transpose_1, _Wc_1), _Eu_concat_1)
+            _V_k_1 = 1/2.0 * np.matmul(np.matmul(_Eu_transpose_1, _Wc_1), _Eu_concat_1).reshape(-1,)
             _E_transpose_1 = np.transpose(_E_k_1)
-            _eqe_1 = np.matmul(np.matmul(_E_transpose_1, _Q_1), _E_k_1)
-            _uru_1 = _u_hat_1*_R_1*_u_hat_1
+            _eqe_1 = np.matmul(np.matmul(_E_transpose_1, _Q_1), _E_k_1).reshape(-1,)
+            _uru_1 = (_u_hat_1*_R_1*_u_hat_1).reshape(-1, )
             _U_k_1 = 1 / 2.0 * (_eqe_1 + _uru_1)
-            print('For k={0}\nu_hat1={1}\nWa1={2}'.format(_k, _u_hat_1, _Wa_1))
+            # print('For k={0}\nu_hat1={1}\nWa1={2}'.format(_k, _u_hat_1, _Wa_1))
 
             # Find V and U: Step 8 for Joint 2 Position
             _Eu_concat_2 = np.concatenate((_E_k_2, _u_hat_2.reshape(-1, 1)), axis=0)
@@ -306,7 +306,7 @@ The eigenvalues of matrix Q3 are:
             _eqe_2 = np.matmul(np.matmul(_E_transpose_2, _Q_2), _E_k_2)
             _uru_2 = _u_hat_2*_R_2*_u_hat_2
             _U_k_2 = 1 / 2.0 * (_eqe_2 + _uru_2)
-            print('u_hat2={0}\nWa2={1}'.format(_u_hat_2, _Wa_2))
+            # print('u_hat2={0}\nWa2={1}'.format(_u_hat_2, _Wa_2))
 
             # Find V and U: Step 8 for Joint 3 Position
             _Eu_concat_3 = np.concatenate((_E_k_3, _u_hat_3.reshape(-1, 1)), axis=0)
@@ -316,7 +316,7 @@ The eigenvalues of matrix Q3 are:
             _eqe_3 = np.matmul(np.matmul(_E_transpose_3, _Q_2), _E_k_3)
             _uru_3 = _u_hat_3*_R_2*_u_hat_3
             _U_k_3 = 1 / 2.0 * (_eqe_3 + _uru_3)
-            print('u_hat3={0}\nWa3={1}'.format(_u_hat_3, _Wa_3))
+            # print('u_hat3={0}\nWa3={1}'.format(_u_hat_3, _Wa_3))
 
             # Get E(k + 1), u_hat and V(k_1): Step 9 for Joint 1 Position
             _E_k1_1[2] = _E_k_1[1]
@@ -333,10 +333,10 @@ The eigenvalues of matrix Q3 are:
             _E_k1_3[1] = _E_k_3[0]
             _E_k1_3[0] = self.j3_traj[_k + 1] - self.actual_positions[2]
 
-            _u_hat_k1_1 = bound(-0.35, 0.35, float(np.matmul(_Wa_1, _E_k1_1)))  # shape(1,)
+            _u_hat_k1_1 = bound(-0.35, 0.35, float(np.matmul(_Wa_1, _E_k1_1))).reshape(-1,)  # shape(1,)
             _Z_1 = np.concatenate((_E_k1_1, _u_hat_k1_1.reshape(-1, 1)), axis=0)
             _Z_trans_1 = np.transpose(_Z_1)
-            _V_k1_1 = 1/2.0*np.matmul(np.matmul(_Z_trans_1, _Wc_1), _Z_1)
+            _V_k1_1 = 1/2.0*np.matmul(np.matmul(_Z_trans_1, _Wc_1), _Z_1).reshape(-1,)
 
             _u_hat_k1_2 = bound(-0.35, 0.35, float(np.matmul(_Wa_2, _E_k1_2)))  # shape(1,)
             _Z_2 = np.concatenate((_E_k1_2, _u_hat_k1_2.reshape(-1, 1)), axis=0)
@@ -351,8 +351,10 @@ The eigenvalues of matrix Q3 are:
             # Update critic weights: Step 11 for Joint 1 Position
             temp = _zeta_critic*(_V_k_1 - (_U_k_1 + _V_k1_1))
             _Wc_1 -= temp*np.matmul(_Z_1, _Z_trans_1)
-            _Wa_1 -= _zeta_actor*(np.matmul(_Wa_1, _E_k_1) -
+            adapt_1 = _zeta_actor*(np.matmul(_Wa_1, _E_k_1) -
                                   (-1/_Wc_1[3][3]*np.matmul(_Wc_1[3][0:3], _E_k_1)))*_E_transpose_1
+            print('adapt_1 val and shape are {} amd {}'.format(adapt_1, adapt_1.shape))
+            _Wa_1 -= adapt_1
 
             # Update critic weights: Step 11 for Joint 1 Position
             temp = _zeta_critic*(_V_k_2 - (_U_k_2 + _V_k1_2))
@@ -379,9 +381,9 @@ The eigenvalues of matrix Q3 are:
         Main loop that controls the flow of the program. The robot arm is moved to the home
         position first and then the joint(s) are updated randomly from there.
         """
-        # rospy.Subscriber('/j2s6s200/joint_states', JointState, self.actual_values)  # Simulation
-        rospy.Subscriber('/j2s6s200_driver/out/joint_state', JointState, self.actual_values)  # Real bot
-        # self.move_joint_home()
+        rospy.Subscriber('/j2s6s200/joint_states', JointState, self.actual_values)  # Simulation
+        # rospy.Subscriber('/j2s6s200_driver/out/joint_state', JointState, self.actual_values)  # Real bot
+        self.move_joint_home()
 
         # print("******************************************************************")
         # print("\t\t\tNominal Motion")
@@ -471,7 +473,7 @@ if __name__ == '__main__':
         # unpause_gazebo = rospy.ServiceProxy('/gazebo/unpause_physics', Empty)
         # resp = unpause_gazebo()
 
-        rt = RandomTrajectory([0.0, np.pi/2, np.pi, -2.1, np.pi, 0.0], freq=2.0, runtime=120.0)
+        rt = RandomTrajectory([0.0, np.pi/2, np.pi, -2.1, np.pi, 0.0], freq=2.0, runtime=20.0)
         # rt = RandomTrajectory([0.0, 2.0, 1.3, -2.1, 1.4, 0.0], freq=2.0, runtime=60.0)
         # rt = RandomTrajectory(np.deg2rad([180, 270, 90, 270, 270, 270]))
         rt.trajectory_calculator()
