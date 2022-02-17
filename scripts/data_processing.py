@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 
-filename = 'added_weight_noise_1'
+filename = 'noise_15_percent'
 folder = '8Hz'
 save_folder = '8Hz'
 

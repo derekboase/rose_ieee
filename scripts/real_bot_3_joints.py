@@ -29,8 +29,8 @@ def bound(low, high, val):
 class RandomTrajectory:
     def __init__(self, home_joints, freq=10.0, runtime=10.0):
         # All the setup stuff for the nodes and topics
-        # self.topic_name = '/j2s6s200/effort_joint_trajectory_controller/command'  # Simulation
-        self.topic_name = '/j2s6s200_driver/trajectory_controller/command'  # Real bot
+        self.topic_name = '/j2s6s200/effort_joint_trajectory_controller/command'  # Simulation
+        # self.topic_name = '/j2s6s200_driver/trajectory_controller/command'  # Real bot
         self.pub = rospy.Publisher(self.topic_name, JointTrajectory, queue_size=10)
         # Instantiation of messages and names
         self.jointCmd = JointTrajectory()
@@ -214,19 +214,20 @@ class RandomTrajectory:
 
         noise = 0.1
         _Wa_1 = (1/_Wc_1[3][3]*_Wc_1[3][0:3]).reshape(1, 3)  # shape(1, 3) NEGATED
-        _Wa_1[0, 0] += np.random.normal(scale=noise/2.0)
-        _Wa_1[0, 1] += np.random.normal(scale=noise/2.0)
-        _Wa_1[0, 2] += np.random.normal(scale=noise/2.0)
+        _Wa_1[0, 0] += np.random.normal(scale=noise)
+        _Wa_1[0, 1] += np.random.normal(scale=noise)
+        _Wa_1[0, 2] += np.random.normal(scale=noise)
 
+        # noise = 0.005
         _Wa_2 = (1/_Wc_2[3][3]*_Wc_2[3][0:3]).reshape(1, 3)  # shape(1, 3) NEGATED
-        _Wa_2[0, 0] += np.random.normal(scale=noise)
-        _Wa_2[0, 1] += np.random.normal(scale=noise)
-        _Wa_2[0, 2] += np.random.normal(scale=noise)
-
+        # _Wa_2[0, 0] += np.random.normal(scale=noise)
+        # _Wa_2[0, 1] += np.random.normal(scale=noise)
+        # _Wa_2[0, 2] += np.random.normal(scale=noise)
+        #
         _Wa_3 = (1/_Wc_3[3][3]*_Wc_3[3][0:3]).reshape(1, 3)  # shape(1, 3) NEGATED
-        _Wa_3[0, 0] += np.random.normal(scale=noise)
-        _Wa_3[0, 1] += np.random.normal(scale=noise)
-        _Wa_3[0, 2] += np.random.normal(scale=noise)
+        # _Wa_3[0, 0] += np.random.normal(scale=noise)
+        # _Wa_3[0, 1] += np.random.normal(scale=noise)
+        # _Wa_3[0, 2] += np.random.normal(scale=noise)
 
         _Wa_3 = (1 / _Wc_3[3][3] * _Wc_3[3][0:3]).reshape(1, 3)  # shape(1, 3) NEGATED
 
@@ -368,6 +369,26 @@ The eigenvalues of matrix Q3 are:
             _Wa_3 -= _zeta_actor*(np.matmul(_Wa_3, _E_k_3) -
                                   (-1/_Wc_3[3][3]*np.matmul(_Wc_3[3][0:3], _E_k_3)))*_E_transpose_3
 
+            T = 1/self.Ts * self.end_time
+
+            if _k <= 0.1 * T:
+                noise = 0.1
+                _Wa_1 = (1 / _Wc_1[3][3] * _Wc_1[3][0:3]).reshape(1, 3)  # shape(1, 3) NEGATED
+                _Wa_1[0, 0] += np.random.normal(scale=noise)
+                _Wa_1[0, 1] += np.random.normal(scale=noise)
+                _Wa_1[0, 2] += np.random.normal(scale=noise)
+
+                noise = 0.005
+                _Wa_2 = (1 / _Wc_2[3][3] * _Wc_2[3][0:3]).reshape(1, 3)  # shape(1, 3) NEGATED
+                _Wa_2[0, 0] += np.random.normal(scale=noise/2.0)
+                _Wa_2[0, 1] += np.random.normal(scale=noise/2.0)
+                _Wa_2[0, 2] += np.random.normal(scale=noise/2.0)
+
+                _Wa_3 = (1 / _Wc_3[3][3] * _Wc_3[3][0:3]).reshape(1, 3)  # shape(1, 3) NEGATED
+                _Wa_3[0, 0] += np.random.normal(scale=noise)
+                _Wa_3[0, 1] += np.random.normal(scale=noise)
+                _Wa_3[0, 2] += np.random.normal(scale=noise)
+
             # Updates
             _E_k_1 = _E_k1_1
             _E_k_2 = _E_k1_2
@@ -386,9 +407,9 @@ The eigenvalues of matrix Q3 are:
         Main loop that controls the flow of the program. The robot arm is moved to the home
         position first and then the joint(s) are updated randomly from there.
         """
-        # rospy.Subscriber('/j2s6s200/joint_states', JointState, self.actual_values)  # Simulation
-        rospy.Subscriber('/j2s6s200_driver/out/joint_state', JointState, self.actual_values)  # Real bot
-        # self.move_joint_home()
+        rospy.Subscriber('/j2s6s200/joint_states', JointState, self.actual_values)  # Simulation
+        # rospy.Subscriber('/j2s6s200_driver/out/joint_state', JointState, self.actual_values)  # Real bot
+        self.move_joint_home()
 
         # print("******************************************************************")
         # print("\t\t\tNominal Motion")
