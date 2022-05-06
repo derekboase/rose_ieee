@@ -448,9 +448,9 @@ The eigenvalues of matrix Q4 are:
                 
                 noise_4 = 0.005
             #     _Wa_4 = (1 / _Wc_4[3][3] * _Wc_4[3][0:3]).reshape(1, 3)  # shape(1, 3) NEGATED
-                _Wa_4[0, 0] += np.random.normal(scale=noise_4)
-                _Wa_4[0, 1] += np.random.normal(scale=noise_4)
-                _Wa_4[0, 2] += np.random.normal(scale=noise_4)
+                # _Wa_4[0, 0] += np.random.normal(scale=noise_4)
+                # _Wa_4[0, 1] += np.random.normal(scale=noise_4)
+                # _Wa_4[0, 2] += np.random.normal(scale=noise_4)
 
             # Updates
             _E_k_1 = _E_k1_1

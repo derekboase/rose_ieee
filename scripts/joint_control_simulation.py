@@ -220,7 +220,7 @@ The eigenvalues of matrix Q2 are:
 {3}'''.format(_Wc_2, _Q_2, _R_2, lam2))
 
         next_tar = np.array(self.current_joints)  # load the next target variable with the current joints
-
+        self.pub.publish(self.jointCmd)
         while _k < _N and not _weights_conv:
             _Wa_1_1.append(_Wa_1[0, 0])
             _Wa_1_2.append(_Wa_1[0, 1])
