@@ -116,25 +116,27 @@ class RandomTrajectory:
 
     def phi_estimator(self, phi_k1, delta_u_k1, delta_y_k):
         phi_func = phi_k1 +(NU*delta_u_k1)/(MU + delta_u_k1**2)*(delta_y_k - phi_k1*delta_u_k1)
+        sum_beta = 0
         if phi_func <= EPSILON or np.absolute(delta_u_k1) <= EPSILON or np.sign(phi_func) != np.sign(PHI_INIT):
             phi_func = PHI_INIT
         return phi_func
 
     def control_action_calculator(self, phi_func, u_arr, e_k):
         term_1 = phi_func**2/(LAM + phi_func**2)*u_arr[-1]
-        sum = 0
-        for idx in range(len(ALPHA)):
-            sum += ALPHA[idx]*u_arr[idx]
-        term_2 = LAM/(LAM + phi_func**2)*sum
+        sum_alpha = 0
+        for idx in range(1, L + 1):
+            sum_alpha += ALPHA[idx]*u_arr[idx]
+        term_2 = LAM/(LAM + phi_func**2)*sum_alpha
         term_3 = (RHO*phi_func)/(LAM + phi_func**2)*e_k
         return term_1 + term_2 + term_3 
 
     def signal_update(self):
-        global _k_lst, y, EPSILON, LAM, MU, NU, RHO, L, ALPHA, PHI_INIT
+        global _k_lst, y, EPSILON, LAM, MU, NU, RHO, L, ALPHA, BETA, PHI_INIT
         
         EPSILON, LAM, MU, NU, RHO, L = 0.0001, 0.1, 0.01, 0.8, 0.8, 4
         ALPHA = [1/2.0, 1/4.0, 1/8.0, 1/8.0]
-        PHI_INIT = -0.01
+        BETA = [1/2.0, 1/4.0, 1/8.0, 1/16.0, 1/16.0, 1/32.0]
+        PHI_INIT = 0.01
 
         _N = self.end_time / self.Ts
 
@@ -172,10 +174,10 @@ class RandomTrajectory:
         u4.append(u_k_joint_4)
 
         # Target vector update
-        # next_tar[0] += u_k_joint_1
-        # next_tar[1] += u_k_joint_2
+        next_tar[0] += u_k_joint_1
+        next_tar[1] += u_k_joint_2
         next_tar[2] += u_k_joint_3
-        # next_tar[3] += u_k_joint_4
+        next_tar[3] += u_k_joint_4
 
         self.update_target(next_tar)
         self.pub.publish(self.jointCmd)
@@ -225,10 +227,10 @@ class RandomTrajectory:
         u4.append(u_k_joint_4)
 
         # Target vector update
-        # next_tar[0] += u_k_joint_1
-        # next_tar[1] += u_k_joint_2
+        next_tar[0] += u_k_joint_1
+        next_tar[1] += u_k_joint_2
         next_tar[2] += u_k_joint_3
-        # next_tar[3] += u_k_joint_4
+        next_tar[3] += u_k_joint_4
 
         self.update_target(next_tar)
         self.pub.publish(self.jointCmd)
@@ -295,10 +297,10 @@ class RandomTrajectory:
             u4.append(u_k_joint_4)           
             
             # Target vector update
-            # next_tar[0] += u_k_joint_1
-            # next_tar[1] += u_k_joint_2
+            next_tar[0] += u_k_joint_1
+            next_tar[1] += u_k_joint_2
             next_tar[2] += u_k_joint_3
-            # next_tar[3] += u_k_joint_4
+            next_tar[3] += u_k_joint_4
 
             self.update_target(next_tar)
             self.pub.publish(self.jointCmd)
@@ -363,7 +365,8 @@ if __name__ == '__main__':
         # rospy.wait_for_service('/gazebo/unpause_physics')
         # unpause_gazebo = rospy.ServiceProxy('/gazebo/unpause_physics', Empty)
         # resp = unpause_gazebo()
-        rt = RandomTrajectory([0.0, np.pi/2, np.pi, -3.0*np.pi/4.0, np.pi, 0.0], freq=8.0, runtime=60.0)
+
+        rt = RandomTrajectory([0.0, np.pi/2, np.pi, -3.0*np.pi/4.0, np.pi, 0.0], freq=8.0, runtime=120.0)
         rt.trajectory_calculator()
         rt.start()
 
