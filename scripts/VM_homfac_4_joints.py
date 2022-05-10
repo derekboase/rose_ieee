@@ -15,8 +15,8 @@ from sensor_msgs.msg import JointState
 class RandomTrajectory:
     def __init__(self, home_joints, freq=10.0, runtime=10.0):
         # All the setup stuff for the nodes and topics
-        self.topic_name = '/j2s6s200/effort_joint_trajectory_controller/command'  # Simulation
-        # self.topic_name = '/j2s6s200_driver/trajectory_controller/command'  # Real bot
+        # self.topic_name = '/j2s6s200/effort_joint_trajectory_controller/command'  # Simulation
+        self.topic_name = '/j2s6s200_driver/trajectory_controller/command'  # Real bot
         self.pub = rospy.Publisher(self.topic_name, JointTrajectory, queue_size=1)
         # Instantiation of messages and names
         self.jointCmd = JointTrajectory()
@@ -135,10 +135,10 @@ class RandomTrajectory:
         EPSILON, LAM, MU, NU, RHO, L = 0.0001, 0.1, 0.01, 0.8, 0.8, 4
         ALPHA = [1/2.0, 1/4.0, 1/8.0, 1/8.0]
 
-        PHI_INIT1 = 1
-        PHI_INIT2 = 0.1
-        PHI_INIT3 = 25
-        PHI_INIT4 = 0.05
+        PHI_INIT1 = 25
+        PHI_INIT2 = 25
+        PHI_INIT3 = 55
+        PHI_INIT4 = 10
 
         _N = self.end_time / self.Ts
 
@@ -184,7 +184,7 @@ class RandomTrajectory:
         self.update_target(next_tar)
         self.pub.publish(self.jointCmd)
         self.rate.sleep()
-        time.sleep(3.0/4.0*self.Ts) # Delay to match frequencies
+        # time.sleep(3.0/4.0*self.Ts) # Delay to match frequencies
 
         # For k = 1
         _k = 1
@@ -237,7 +237,7 @@ class RandomTrajectory:
         self.update_target(next_tar)
         self.pub.publish(self.jointCmd)
         self.rate.sleep()
-        time.sleep(3.0/4.0*self.Ts) # Delay to match frequencies 
+        # time.sleep(3.0/4.0*self.Ts) # Delay to match frequencies 
 
         _k = 2
         while _k < _N:
@@ -308,7 +308,7 @@ class RandomTrajectory:
             self.pub.publish(self.jointCmd)
             self.rate.sleep()
             _k += 1
-            time.sleep(3.0/4.0*self.Ts)
+            # time.sleep(3.0/4.0*self.Ts)
 
         time_plt = range(0, int(_N))
 
@@ -336,16 +336,16 @@ class RandomTrajectory:
         Main loop that controls the flow of the program. The robot arm is moved to the home
         position first and then the joint(s) are updated randomly from there.
         """
-        rospy.Subscriber('/j2s6s200/joint_states', JointState, self.actual_values)  # Simulation
-        # rospy.Subscriber('/j2s6s200_driver/out/joint_states', JointState, self.actual_values)  # Real bot
-        self.move_joint_home()
+        # rospy.Subscriber('/j2s6s200/joint_states', JointState, self.actual_values)  # Simulation
+        rospy.Subscriber('/j2s6s200_driver/out/joint_state', JointState, self.actual_values)  # Real bot
+        # self.move_joint_home()
 
         # print("******************************************************************")
         # print("\t\t\tNominal Motion")
         # print("******************************************************************")
         # self.nominal_trajectory()
 
-        time.sleep(0.1)
+        time.sleep(0.5)
         print("******************************************************************")
         print("\t\t\tAlgorithm Motion")
         print("******************************************************************")
@@ -367,7 +367,7 @@ if __name__ == '__main__':
         # rospy.wait_for_service('/gazebo/unpause_physics')
         # unpause_gazebo = rospy.ServiceProxy('/gazebo/unpause_physics', Empty)
         # resp = unpause_gazebo()
-        rt = RandomTrajectory([0.0, np.pi/2, np.pi, -3.0*np.pi/4.0, np.pi, 0.0], freq=8.0, runtime=120.0)
+        rt = RandomTrajectory([0.0, np.pi/2, np.pi, -3.0*np.pi/4.0, np.pi, 0.0], freq=10.0, runtime=120.0)
         rt.trajectory_calculator()
         rt.start()
 

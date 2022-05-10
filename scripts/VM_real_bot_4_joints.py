@@ -27,10 +27,10 @@ def bound(low, high, val):
 
 
 class RandomTrajectory:
-    def __init__(self, home_joints, freq=10.0, runtime=10.0):
+    def __init__(self, home_joints, freq=8.0, runtime=10.0):
         # All the setup stuff for the nodes and topics
-        self.topic_name = '/j2s6s200/effort_joint_trajectory_controller/command'  # Simulation
-        # self.topic_name = '/j2s6s200_driver/trajectory_controller/command'  # Real bot
+        # self.topic_name = '/j2s6s200/effort_joint_trajectory_controller/command'  # Simulation
+        self.topic_name = '/j2s6s200_driver/trajectory_controller/command'  # Real bot
         self.pub = rospy.Publisher(self.topic_name, JointTrajectory, queue_size=10)
         # Instantiation of messages and names
         self.jointCmd = JointTrajectory()
@@ -46,7 +46,7 @@ class RandomTrajectory:
         self.current_joints = home_joints
         self.point.positions = self.current_joints
         self.point.velocities = [0, 0, 0, 0, 0, 0]
-        self.point.accelerations = [0, 0, 0, 0, 0, 0]
+        self.point.accelerations = [0.0]*6
         self.point.effort = []
 
         # All the time related information
@@ -136,7 +136,7 @@ class RandomTrajectory:
         self.jointCmd.header.stamp = rospy.Time.now() + rospy.Duration.from_sec(0.0)
         self.point.time_from_start = rospy.Duration.from_sec(self.Ts)
         self.point.velocities = ((next_targets - np.array(self.current_joints)) / self.Ts).tolist()
-        # self.point.accelerations = (np.array(self.point.velocities) / self.Ts).tolist()
+        self.point.accelerations = (np.array(self.point.velocities) / self.Ts).tolist()
         self.current_joints = next_targets.tolist()
         # self.point.positions = self.current_joints
         self.point.positions = next_targets.tolist()
@@ -165,8 +165,8 @@ class RandomTrajectory:
         # _R_2 = generate_SPD_matrix(1)
         # _Q_3 = generate_SPD_matrix(3)
         # _R_3 = generate_SPD_matrix(1)
-        _Q_4 = generate_SPD_matrix(3)
-        _R_4 = generate_SPD_matrix(1)
+        # _Q_4 = generate_SPD_matrix(3)
+        # _R_4 = generate_SPD_matrix(1)
 
         _Q_1 = np.array([[0.51502986, 0.25789362, 0.06580822],
                          [0.25789362, 0.19214249, 0.0747135],
@@ -182,6 +182,11 @@ class RandomTrajectory:
                          [ 0.51836226,  0.4169774,   0.46758112],
                          [ 0.63922965,  0.46758112,  0.60571963]])
         _R_3 = np.array([[ 0.49362862]])
+
+        _Q_4 = np.array([[ 0.56664825,  0.36331939,  0.53480918],
+                         [ 0.36331939,  0.47522941,  0.3799147],
+                         [ 0.53480918,  0.3799147,   0.52663976]])
+        _R_4 = np.array([[ 0.00019686]])
 
         lam1, vec1 = np.linalg.eig(_Q_1)
         lam2, vec2 = np.linalg.eig(_Q_2)
@@ -207,7 +212,7 @@ class RandomTrajectory:
         # _Wc_1 = generate_SPD_matrix(4)  # shape(4, 4)
         # _Wc_2 = generate_SPD_matrix(4)
         # _Wc_3 = generate_SPD_matrix(4)
-        _Wc_4 = generate_SPD_matrix(4)
+        # _Wc_4 = generate_SPD_matrix(4)
 
         _Wc_1 = np.array([[ 0.80349833,  0.30936819,  0.84494049,  0.71454207],
                           [ 0.30936819,  0.21330422,  0.31156708,  0.36979277],
@@ -224,7 +229,12 @@ class RandomTrajectory:
                           [ 0.37660518,  0.42651551,  0.40267321,  0.35263482],
                           [ 0.25485893,  0.33597899,  0.35263482,  0.48075655]])
 
-        noise = 0.1
+        _Wc_4 = np.array([[ 1.1662813,   0.824253,    1.00486437,  0.59974419],
+                          [ 0.824253,    0.75449189,  0.57220204,  0.44974672],
+                          [ 1.00486437,  0.57220204,  1.05827986,  0.45351103],
+                          [ 0.59974419,  0.44974672,  0.45351103,  0.50672568]])                          
+
+        noise = 0.0
         _Wa_1 = (1/_Wc_1[3][3]*_Wc_1[3][0:3]).reshape(1, 3)  # shape(1, 3) NEGATED
         _Wa_1[0, 0] += np.random.normal(scale=noise)
         _Wa_1[0, 1] += np.random.normal(scale=noise)
@@ -285,7 +295,7 @@ The matrix Q4 is:
 The matrix R4 is:
 {2}
 The eigenvalues of matrix Q4 are:
-{3}'''.format(_Wc_4, _Q_4, _R_4, lam4))
+# {3}'''.format(_Wc_4, _Q_4, _R_4, lam4))
 
         next_tar = np.array(self.current_joints)  # load the next target variable with the current joints
 
@@ -422,35 +432,34 @@ The eigenvalues of matrix Q4 are:
 
             # Update critic weights: Step 11 for Joint 4 Position
             temp = _zeta_critic*(_V_k_4 - (_U_k_4 + _V_k1_4))
-            print('temp={0},\t_Z_4={1},\t,_Z_trans_4={2}'.format(temp, _Z_4, _Z_trans_4))
             _Wc_4 -= temp*np.matmul(_Z_4, _Z_trans_4)
             _Wa_4 -= _zeta_actor*(np.matmul(_Wa_4, _E_k_4) -
                                   (-1/_Wc_4[3][3]*np.matmul(_Wc_4[3][0:3], _E_k_4)))*_E_transpose_4
 
-            T = 1/self.Ts * self.end_time
+            # T = 1/self.Ts * self.end_time
 
-            if _k <= 0.1 * T:
-                noise = 0.01
-            #     _Wa_1 = (1 / _Wc_1[3][3] * _Wc_1[3][0:3]).reshape(1, 3)  # shape(1, 3) NEGATED
-                _Wa_1[0, 0] += np.random.normal(scale=noise)
-                _Wa_1[0, 1] += np.random.normal(scale=noise)
-                _Wa_1[0, 2] += np.random.normal(scale=noise)
+            # if _k <= 0.1 * T:
+            #     noise = 0.01
+            # #     _Wa_1 = (1 / _Wc_1[3][3] * _Wc_1[3][0:3]).reshape(1, 3)  # shape(1, 3) NEGATED
+            #     _Wa_1[0, 0] += np.random.normal(scale=noise)
+            #     _Wa_1[0, 1] += np.random.normal(scale=noise)
+            #     _Wa_1[0, 2] += np.random.normal(scale=noise)
 
-            #     _Wa_2 = (1 / _Wc_2[3][3] * _Wc_2[3][0:3]).reshape(1, 3)  # shape(1, 3) NEGATED
-                _Wa_2[0, 0] += np.random.normal(scale=noise/2.0)
-                _Wa_2[0, 1] += np.random.normal(scale=noise/2.0)
-                _Wa_2[0, 2] += np.random.normal(scale=noise/2.0)
+            # #     _Wa_2 = (1 / _Wc_2[3][3] * _Wc_2[3][0:3]).reshape(1, 3)  # shape(1, 3) NEGATED
+            #     _Wa_2[0, 0] += np.random.normal(scale=noise/2.0)
+            #     _Wa_2[0, 1] += np.random.normal(scale=noise/2.0)
+            #     _Wa_2[0, 2] += np.random.normal(scale=noise/2.0)
 
-            #     _Wa_3 = (1 / _Wc_3[3][3] * _Wc_3[3][0:3]).reshape(1, 3)  # shape(1, 3) NEGATED
-                _Wa_3[0, 0] += np.random.normal(scale=noise)
-                _Wa_3[0, 1] += np.random.normal(scale=noise)
-                _Wa_3[0, 2] += np.random.normal(scale=noise)
+            # #     _Wa_3 = (1 / _Wc_3[3][3] * _Wc_3[3][0:3]).reshape(1, 3)  # shape(1, 3) NEGATED
+            #     _Wa_3[0, 0] += np.random.normal(scale=noise)
+            #     _Wa_3[0, 1] += np.random.normal(scale=noise)
+            #     _Wa_3[0, 2] += np.random.normal(scale=noise)
                 
-                noise_4 = 0.005
-            #     _Wa_4 = (1 / _Wc_4[3][3] * _Wc_4[3][0:3]).reshape(1, 3)  # shape(1, 3) NEGATED
-                # _Wa_4[0, 0] += np.random.normal(scale=noise_4)
-                # _Wa_4[0, 1] += np.random.normal(scale=noise_4)
-                # _Wa_4[0, 2] += np.random.normal(scale=noise_4)
+            #     noise_4 = 0.005
+            # #     _Wa_4 = (1 / _Wc_4[3][3] * _Wc_4[3][0:3]).reshape(1, 3)  # shape(1, 3) NEGATED
+            #     _Wa_4[0, 0] += np.random.normal(scale=noise_4)
+            #     _Wa_4[0, 1] += np.random.normal(scale=noise_4)
+            #     _Wa_4[0, 2] += np.random.normal(scale=noise_4)
 
             # Updates
             _E_k_1 = _E_k1_1
@@ -460,9 +469,7 @@ The eigenvalues of matrix Q4 are:
             _k += 1
 
 
-            # print('For k={0}\nu_hat1={1}\nWa1={2}'.format(_k, _u_hat_1, _Wa_1))
-            # print('u_hat2={0}\nWa2={1}'.format(_u_hat_2, _Wa_2))
-            # print('u_hat3={0}\nWa3={1}'.format(_u_hat_3, _Wa_3))
+
 
         return _Wc_1, _Wa_1, _Wc_2, _Wa_2, _Wc_3, _Wa_3
 
@@ -471,16 +478,16 @@ The eigenvalues of matrix Q4 are:
         Main loop that controls the flow of the program. The robot arm is moved to the home
         position first and then the joint(s) are updated randomly from there.
         """
-        rospy.Subscriber('/j2s6s200/joint_states', JointState, self.actual_values)  # Simulation
-        # rospy.Subscriber('/j2s6s200_driver/out/joint_state', JointState, self.actual_values)  # Real bot
-        self.move_joint_home()
+        # rospy.Subscriber('/j2s6s200/joint_states', JointState, self.actual_values)  # Simulation
+        rospy.Subscriber('/j2s6s200_driver/out/joint_state', JointState, self.actual_values)  # Real bot
+        # self.move_joint_home()
 
         # print("******************************************************************")
         # print("\t\t\tNominal Motion")
         # print("******************************************************************")
         # self.nominal_trajectory()
 
-        time.sleep(0.5)
+        time.sleep(1)
         print("******************************************************************")
         print("\t\t\tAlgorithm Motion")
         print("******************************************************************")
@@ -532,31 +539,31 @@ The eigenvalues of matrix Q4 are:
         plt.tight_layout()
         plt.show()
 
-        # data = np.concatenate((t.reshape(-1, 1),
-        #                        np.rad2deg(np.array(self.j1_traj[:-1]).reshape(-1, 1)),
-        #                        np.rad2deg(np.array(self.j2_traj[:-1]).reshape(-1, 1)),
-        #                        np.rad2deg(np.array(self.j3_traj[:-1]).reshape(-1, 1)),
-        #                        np.rad2deg(np.array(self.j4_traj[:-1]).reshape(-1, 1)),
-        #                        np.rad2deg(np.array(self.algorithm_j1).reshape(-1, 1)),
-        #                        np.rad2deg(np.array(self.algorithm_j2).reshape(-1, 1)),
-        #                        np.rad2deg(np.array(self.algorithm_j3).reshape(-1, 1)),
-        #                        np.rad2deg(np.array(self.algorithm_j4).reshape(-1, 1)),
-        #                        np.array(_Wa_1_1).reshape(-1, 1),
-        #                        np.array(_Wa_1_2).reshape(-1, 1),
-        #                        np.array(_Wa_1_3).reshape(-1, 1),
-        #                        np.array(_Wa_2_1).reshape(-1, 1),
-        #                        np.array(_Wa_2_2).reshape(-1, 1),
-        #                        np.array(_Wa_2_3).reshape(-1, 1),
-        #                        np.array(_Wa_3_1).reshape(-1, 1),
-        #                        np.array(_Wa_3_2).reshape(-1, 1),
-        #                        np.array(_Wa_3_3).reshape(-1, 1)
-        #                        np.array(_Wa_4_1).reshape(-1, 1),
-        #                        np.array(_Wa_4_2).reshape(-1, 1),
-        #                        np.array(_Wa_4_3).reshape(-1, 1)), axis=1)
+        data = np.concatenate((t.reshape(-1, 1),
+                               np.rad2deg(np.array(self.j1_traj[:-1]).reshape(-1, 1)),
+                               np.rad2deg(np.array(self.j2_traj[:-1]).reshape(-1, 1)),
+                               np.rad2deg(np.array(self.j3_traj[:-1]).reshape(-1, 1)),
+                               np.rad2deg(np.array(self.j4_traj[:-1]).reshape(-1, 1)),
+                               np.rad2deg(np.array(self.algorithm_j1).reshape(-1, 1)),
+                               np.rad2deg(np.array(self.algorithm_j2).reshape(-1, 1)),
+                               np.rad2deg(np.array(self.algorithm_j3).reshape(-1, 1)),
+                               np.rad2deg(np.array(self.algorithm_j4).reshape(-1, 1)),
+                               np.array(_Wa_1_1).reshape(-1, 1),
+                               np.array(_Wa_1_2).reshape(-1, 1),
+                               np.array(_Wa_1_3).reshape(-1, 1),
+                               np.array(_Wa_2_1).reshape(-1, 1),
+                               np.array(_Wa_2_2).reshape(-1, 1),
+                               np.array(_Wa_2_3).reshape(-1, 1),
+                               np.array(_Wa_3_1).reshape(-1, 1),
+                               np.array(_Wa_3_2).reshape(-1, 1),
+                               np.array(_Wa_3_3).reshape(-1, 1),
+                               np.array(_Wa_4_1).reshape(-1, 1),
+                               np.array(_Wa_4_2).reshape(-1, 1),
+                               np.array(_Wa_4_3).reshape(-1, 1)), axis=1)
 
-        # filename = str(raw_input("Enter a filename:"))
-        # filepath = '/home/derek/catkin_ws/src/rose_ieee/scripts/Data/8Hz/' + filename + '.csv'
-        # np.savetxt(filepath, data, delimiter=',')
+        filename = str(raw_input("Enter a filename:"))
+        filepath = '/home/keenan/catkin_ws/src/rose_ieee/data/our_algo/' + filename + '.csv'
+        np.savetxt(filepath, data, delimiter=',')
 
         # while not rospy.is_shutdown():
         #     # self.nominal_trajectory()
@@ -568,7 +575,7 @@ if __name__ == '__main__':
     try:
         rospy.init_node('move_robot_using_trajectory_msg')
         # allow gazebo to launch
-        time.sleep(1)
+        time.sleep(0.5)
 
         # Unpause the physics
         # rospy.wait_for_service('/gazebo/unpause_physics')
