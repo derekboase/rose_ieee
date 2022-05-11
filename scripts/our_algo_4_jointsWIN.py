@@ -1,5 +1,6 @@
 #! /usr/bin/env python
 
+
 import matplotlib.pyplot as plt
 import numpy as np
 import rospy
@@ -7,9 +8,6 @@ import time
 from trajectory_msgs.msg import JointTrajectoryPoint
 from trajectory_msgs.msg import JointTrajectory
 from sensor_msgs.msg import JointState
-
-SIM = True
-
 # from std_srvs.srv import Empty
 # from random import uniform
 
@@ -29,13 +27,10 @@ def bound(low, high, val):
 
 
 class RandomTrajectory:
-    def __init__(self, home_joints, freq=8.0, runtime=10.0, simulation=SIM):
+    def __init__(self, home_joints, freq=8.0, runtime=10.0):
         # All the setup stuff for the nodes and topics
-        self.sim = simulation
-        if self.sim:
-            self.topic_name = '/j2s6s200/effort_joint_trajectory_controller/command'  # Simulation
-        else:
-            self.topic_name = '/j2s6s200_driver/trajectory_controller/command'  # Real bot
+        # self.topic_name = '/j2s6s200/effort_joint_trajectory_controller/command'  # Simulation
+        self.topic_name = '/j2s6s200_driver/trajectory_controller/command'  # Real bot
         self.pub = rospy.Publisher(self.topic_name, JointTrajectory, queue_size=10)
         # Instantiation of messages and names
         self.jointCmd = JointTrajectory()
@@ -191,10 +186,7 @@ class RandomTrajectory:
         _Q_4 = np.array([[ 0.56664825,  0.36331939,  0.53480918],
                          [ 0.36331939,  0.47522941,  0.3799147],
                          [ 0.53480918,  0.3799147,   0.52663976]])
-        _R_4 = np.array([[ 0.019686]])
-
-        # _Q_2, _Q_3, _Q_4 = _Q_1, _Q_1, _Q_1
-        # _R_2, _R_3, _R_4 = _R_1, _R_1, _R_1
+        _R_4 = np.array([[ 0.00019686]])
 
         lam1, vec1 = np.linalg.eig(_Q_1)
         lam2, vec2 = np.linalg.eig(_Q_2)
@@ -237,36 +229,37 @@ class RandomTrajectory:
                           [ 0.37660518,  0.42651551,  0.40267321,  0.35263482],
                           [ 0.25485893,  0.33597899,  0.35263482,  0.48075655]])
 
-        _Wc_4 = np.array([[ 1.52075427,  0.7837313,   1.29888826,   1.07202863],
-                          [ 0.7837313,   0.93636855,  0.54342819,   0.28334642],
-                          [ 1.29888826,  0.54342819,  1.41172789,   0.91171883],
-                          [ 1.07202863,  0.28334642,  0.91171883,   1.27898473]])                          
+        _Wc_4 = np.array([[ 1.1662813,   0.824253,    1.00486437,  0.59974419],
+                          [ 0.824253,    0.75449189,  0.57220204,  0.44974672],
+                          [ 1.00486437,  0.57220204,  1.05827986,  0.45351103],
+                          [ 0.59974419,  0.44974672,  0.45351103,  0.50672568]])                          
 
-        noise = 0.1
+        noise = 0.0
         _Wa_1 = (1/_Wc_1[3][3]*_Wc_1[3][0:3]).reshape(1, 3)  # shape(1, 3) NEGATED
-        _Wa_1[0, 1] *= -1
         _Wa_1[0, 0] += np.random.normal(scale=noise)
         _Wa_1[0, 1] += np.random.normal(scale=noise)
         _Wa_1[0, 2] += np.random.normal(scale=noise)
 
-        
+        # noise = 0.005
         _Wa_2 = (1/_Wc_2[3][3]*_Wc_2[3][0:3]).reshape(1, 3)  # shape(1, 3) NEGATED
-        _Wa_2[0, 1] *= -1
         _Wa_2[0, 0] += np.random.normal(scale=noise)
         _Wa_2[0, 1] += np.random.normal(scale=noise)
         _Wa_2[0, 2] += np.random.normal(scale=noise)
-        
+        #
         _Wa_3 = (1/_Wc_3[3][3]*_Wc_3[3][0:3]).reshape(1, 3)  # shape(1, 3) NEGATED
-        _Wa_3[0, 1] *= -1
         _Wa_3[0, 0] += np.random.normal(scale=noise)
         _Wa_3[0, 1] += np.random.normal(scale=noise)
         _Wa_3[0, 2] += np.random.normal(scale=noise)
 
         _Wa_4 = (1 / _Wc_4[3][3] * _Wc_4[3][0:3]).reshape(1, 3)  # shape(1, 3) NEGATED
+        _Wa_4[0, 0] += np.random.normal(scale=noise)
+        _Wa_4[0, 1] += np.random.normal(scale=noise)
+        _Wa_4[0, 2] += np.random.normal(scale=noise)
+
+        _Wa_1[0, 1] *= -1
+        _Wa_2[0, 1] *= -1
+        _Wa_3[0, 1] *= -1
         _Wa_4[0, 1] *= -1
-        # _Wa_4[0, 0] += np.random.normal(scale=noise)
-        # _Wa_4[0, 1] += np.random.normal(scale=noise)
-        # _Wa_4[0, 2] += np.random.normal(scale=noise)
 
 #         print('''Wc_1 is:
 # {0} 
@@ -295,13 +288,13 @@ class RandomTrajectory:
 # The eigenvalues of matrix Q3 are:
 # {3}'''.format(_Wc_3, _Q_3, _R_3, lam3))
 
-#         print('''Wc_4 is:
-# {0} 
-# The matrix Q4 is:
-# {1}
-# The matrix R4 is:
-# {2}
-# The eigenvalues of matrix Q4 are:
+        print('''Wc_4 is:
+{0} 
+The matrix Q4 is:
+{1}
+The matrix R4 is:
+{2}
+The eigenvalues of matrix Q4 are:
 # {3}'''.format(_Wc_4, _Q_4, _R_4, lam4))
 
         next_tar = np.array(self.current_joints)  # load the next target variable with the current joints
@@ -475,25 +468,19 @@ class RandomTrajectory:
             _E_k_4 = _E_k1_4
             _k += 1
 
-        # print('_Wc_4=\n{0}\n_Wa_4=\n{1}'.format(_Wc_4, _Wa_4))
-
-        return _Wc_1, _Wa_1, _Wc_2, _Wa_2, _Wc_3, _Wa_3, _Wc_4, _Wa_4
 
 
+
+        return _Wc_1, _Wa_1, _Wc_2, _Wa_2, _Wc_3, _Wa_3
 
     def start(self):
         """(self) -> None
         Main loop that controls the flow of the program. The robot arm is moved to the home
         position first and then the joint(s) are updated randomly from there.
         """
-        if self.sim:
-            rospy.Subscriber('/j2s6s200/joint_states', JointState, self.actual_values)  # Simulation
-            print("******************************************************************")
-            print("\t\t\tMoving Home")
-            print("******************************************************************")
-            self.move_joint_home()
-        else:
-            rospy.Subscriber('/j2s6s200_driver/out/joint_state', JointState, self.actual_values)  # Real bot
+        # rospy.Subscriber('/j2s6s200/joint_states', JointState, self.actual_values)  # Simulation
+        rospy.Subscriber('/j2s6s200_driver/out/joint_state', JointState, self.actual_values)  # Real bot
+        # self.move_joint_home()
 
         # print("******************************************************************")
         # print("\t\t\tNominal Motion")
@@ -595,7 +582,7 @@ if __name__ == '__main__':
         # unpause_gazebo = rospy.ServiceProxy('/gazebo/unpause_physics', Empty)
         # resp = unpause_gazebo()
 
-        rt = RandomTrajectory([0.0, np.pi/2, np.pi, -3.0*np.pi/4.0, np.pi, 0.0], freq=10.0, runtime=120.0)
+        rt = RandomTrajectory([0.0, np.pi/2, np.pi, -3.0*np.pi/4.0, np.pi, 0.0], freq=8.0, runtime=120.0)
         # rt = RandomTrajectory([0.0, np.pi/2, np.pi, -2.1, np.pi, 0.0], freq=8.0, runtime=120.0)
         rt.trajectory_calculator()
         rt.start()

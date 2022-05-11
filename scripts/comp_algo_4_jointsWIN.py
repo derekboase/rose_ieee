@@ -1,5 +1,6 @@
 #! /usr/bin/env python
 
+
 import matplotlib.pyplot as plt
 import numpy as np
 import rospy
@@ -10,17 +11,12 @@ from sensor_msgs.msg import JointState
 # from std_srvs.srv import Empty
 # from random import uniform
 
-SIM = True
-
 
 class RandomTrajectory:
-    def __init__(self, home_joints, freq=10.0, runtime=10.0, simulation=SIM):
+    def __init__(self, home_joints, freq=10.0, runtime=10.0):
         # All the setup stuff for the nodes and topics
-        self.sim = simulation 
-        if self.sim:
-            self.topic_name = '/j2s6s200/effort_joint_trajectory_controller/command'  # Simulation
-        else:
-            self.topic_name = '/j2s6s200_driver/trajectory_controller/command'  # Real bot
+        # self.topic_name = '/j2s6s200/effort_joint_trajectory_controller/command'  # Simulation
+        self.topic_name = '/j2s6s200_driver/trajectory_controller/command'  # Real bot
         self.pub = rospy.Publisher(self.topic_name, JointTrajectory, queue_size=1)
         # Instantiation of messages and names
         self.jointCmd = JointTrajectory()
@@ -112,7 +108,7 @@ class RandomTrajectory:
         self.jointCmd.header.stamp = rospy.Time.now() + rospy.Duration.from_sec(0.0)
         self.point.time_from_start = rospy.Duration.from_sec(self.Ts)
         self.point.velocities = ((next_targets - np.array(self.current_joints)) / self.Ts).tolist()
-        self.point.accelerations = (np.array(self.point.velocities) / self.Ts).tolist()
+        # self.point.accelerations = (np.array(self.point.velocities) / self.Ts).tolist()
         self.current_joints = next_targets.tolist()
         # self.point.positions = self.current_joints
         self.point.positions = next_targets.tolist()
@@ -340,15 +336,9 @@ class RandomTrajectory:
         Main loop that controls the flow of the program. The robot arm is moved to the home
         position first and then the joint(s) are updated randomly from there.
         """
-        if self.sim:
-            rospy.Subscriber('/j2s6s200/joint_states', JointState, self.actual_values)  # Simulation
-            print("******************************************************************")
-            print("\t\t\tMoving Home")
-            print("******************************************************************")
-            self.move_joint_home()
-        else:
-            rospy.Subscriber('/j2s6s200_driver/out/joint_state', JointState, self.actual_values)  # Real bot
-            
+        # rospy.Subscriber('/j2s6s200/joint_states', JointState, self.actual_values)  # Simulation
+        rospy.Subscriber('/j2s6s200_driver/out/joint_state', JointState, self.actual_values)  # Real bot
+        # self.move_joint_home()
 
         # print("******************************************************************")
         # print("\t\t\tNominal Motion")
