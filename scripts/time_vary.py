@@ -97,7 +97,7 @@ class RandomTrajectory:
                 self.j1_traj.append(_amplitude * np.exp(-(t - self.end_time/2)/_tau))
                 self.j3_traj.append(4.0*np.pi/5.0)
             self.j4_traj.append(np.pi/2.0*np.sin(8.0*np.pi*t/self.end_time) - 3.0*np.pi/4.0)
-        self.j2_traj = np.linspace(np.pi/2, 5.0*np.pi/6, num=len(_time))
+        self.j2_traj = np.linspace(2.5, 3.5, num=len(_time))
 
     def actual_values(self, real_joint_angles):
         self.actual_positions = np.array(real_joint_angles.position[0:6])
@@ -193,8 +193,8 @@ class RandomTrajectory:
                          [ 0.53480918,  0.3799147,   0.52663976]])
         _R_4 = np.array([[ 0.019686]])
 
-        # _Q_2, _Q_3, _Q_4 = _Q_1, _Q_1, _Q_1
-        # _R_2, _R_3, _R_4 = _R_1, _R_1, _R_1
+        _Q_2, _Q_3, _Q_4 = _Q_1, _Q_1, _Q_1
+        _R_2, _R_3, _R_4 = _R_1, _R_1, _R_1
 
         lam1, vec1 = np.linalg.eig(_Q_1)
         lam2, vec2 = np.linalg.eig(_Q_2)
@@ -240,7 +240,9 @@ class RandomTrajectory:
         _Wc_4 = np.array([[ 1.52075427,  0.7837313,   1.29888826,   1.07202863],
                           [ 0.7837313,   0.93636855,  0.54342819,   0.28334642],
                           [ 1.29888826,  0.54342819,  1.41172789,   0.91171883],
-                          [ 1.07202863,  0.28334642,  0.91171883,   1.27898473]])                          
+                          [ 1.07202863,  0.28334642,  0.91171883,   1.27898473]])        
+
+        _Wc_2 = _Wc_1
 
         noise = 0.1
         _Wa_1 = (1/_Wc_1[3][3]*_Wc_1[3][0:3]).reshape(1, 3)  # shape(1, 3) NEGATED
@@ -249,7 +251,7 @@ class RandomTrajectory:
         _Wa_1[0, 1] += np.random.normal(scale=noise)
         _Wa_1[0, 2] += np.random.normal(scale=noise)
 
-        noise_2 = 0.0
+        noise_2 = 0.2
         _Wa_2 = (1/_Wc_2[3][3]*_Wc_2[3][0:3]).reshape(1, 3)  # shape(1, 3) NEGATED
         _Wa_2[0, 1] *= -1
         _Wa_2[0, 0] += np.random.normal(scale=noise_2)
@@ -331,10 +333,10 @@ class RandomTrajectory:
             _u_hat_3 = bound(-0.3, 0.3, float(np.matmul(_Wa_3, _E_k_3)))  # shape(1,)
             _u_hat_4 = bound(-0.3, 0.3, float(np.matmul(_Wa_4, _E_k_4)))  # shape(1,)
 
-            next_tar[0] += _u_hat_1  # shape(1,)
+            # next_tar[0] += _u_hat_1  # shape(1,)
             next_tar[1] += _u_hat_2  # shape(1,)
-            next_tar[2] += _u_hat_3
-            next_tar[3] += _u_hat_4
+            # next_tar[2] += _u_hat_3
+            # next_tar[3] += _u_hat_4
 
             self.update_target(next_tar)
             self.algorithm_j1.append(self.actual_positions[0])  # For the sole purpose of plotting
@@ -592,7 +594,7 @@ if __name__ == '__main__':
         # unpause_gazebo = rospy.ServiceProxy('/gazebo/unpause_physics', Empty)
         # resp = unpause_gazebo()
 
-        rt = RandomTrajectory([0.0, np.pi/2, np.pi, -3.0*np.pi/4.0, np.pi, 0.0], freq=8.0, runtime=120.0)
+        rt = RandomTrajectory([1.5708, 2.5, 5.498, -3.0*np.pi/4.0, np.pi, 0.0], freq=8.0, runtime=30.0)
         # rt = RandomTrajectory([0.0, np.pi/2, np.pi, -2.1, np.pi, 0.0], freq=8.0, runtime=120.0)
         rt.trajectory_calculator()
         rt.start()

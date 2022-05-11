@@ -82,7 +82,7 @@ class RandomTrajectory:
                 self.j1_traj.append(_amplitude * np.exp(-(t - self.end_time/2)/_tau))
                 self.j3_traj.append(4.0*np.pi/5.0)
             self.j4_traj.append(np.pi/2.0*np.sin(8.0*np.pi*t/self.end_time) - 3.0*np.pi/4.0)
-        self.j2_traj = np.linspace(np.pi/2, 5.0*np.pi/6, num=len(_time))
+        self.j2_traj = np.linspace(2.5, 3.5, num=len(_time))
 
     def actual_values(self, real_joint_angles):
         self.actual_positions = np.array(real_joint_angles.position[0:6])
@@ -180,10 +180,10 @@ class RandomTrajectory:
         u4.append(u_k_joint_4)
 
         # Target vector update
-        next_tar[0] += u_k_joint_1
+        # next_tar[0] += u_k_joint_1
         next_tar[1] += u_k_joint_2
-        next_tar[2] += u_k_joint_3
-        next_tar[3] += u_k_joint_4
+        # next_tar[2] += u_k_joint_3
+        # next_tar[3] += u_k_joint_4
 
         self.update_target(next_tar)
         self.pub.publish(self.jointCmd)
@@ -233,10 +233,10 @@ class RandomTrajectory:
         u4.append(u_k_joint_4)
 
         # Target vector update
-        next_tar[0] += u_k_joint_1
+        # next_tar[0] += u_k_joint_1
         next_tar[1] += u_k_joint_2
-        next_tar[2] += u_k_joint_3
-        next_tar[3] += u_k_joint_4
+        # next_tar[2] += u_k_joint_3
+        # next_tar[3] += u_k_joint_4
 
         self.update_target(next_tar)
         self.pub.publish(self.jointCmd)
@@ -303,10 +303,10 @@ class RandomTrajectory:
             u4.append(u_k_joint_4)           
             
             # Target vector update
-            next_tar[0] += u_k_joint_1
+            # next_tar[0] += u_k_joint_1
             next_tar[1] += u_k_joint_2
-            next_tar[2] += u_k_joint_3
-            next_tar[3] += u_k_joint_4
+            # next_tar[2] += u_k_joint_3
+            # next_tar[3] += u_k_joint_4
 
             self.update_target(next_tar)
             self.pub.publish(self.jointCmd)
@@ -396,7 +396,7 @@ if __name__ == '__main__':
         # rospy.wait_for_service('/gazebo/unpause_physics')
         # unpause_gazebo = rospy.ServiceProxy('/gazebo/unpause_physics', Empty)
         # resp = unpause_gazebo()
-        rt = RandomTrajectory([0.0, np.pi/2, np.pi, -3.0*np.pi/4.0, np.pi, 0.0], freq=5.0, runtime=120.0)
+        rt = RandomTrajectory([1.5708, 2.5, 5.498, -3.0*np.pi/4.0, np.pi, 0.0], freq=8.0, runtime=30.0)
         rt.trajectory_calculator()
         rt.start()
 
