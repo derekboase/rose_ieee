@@ -136,13 +136,13 @@ class RandomTrajectory:
     def signal_update(self):
         global _k_lst, y, EPSILON, LAM, MU, NU, RHO, L, ALPHA
         
-        EPSILON, LAM, MU, NU, RHO, L = 0.0001, 0.1, 0.01, 0.8, 0.8, 4
+        EPSILON, LAM, MU, NU, RHO, L = 0.00001, 0.1, 0.01, 0.8, 0.8, 4
         ALPHA = [1/2.0, 1/4.0, 1/8.0, 1/8.0]
 
         PHI_INIT1 = 25
         PHI_INIT2 = 25
-        PHI_INIT3 = 55
-        PHI_INIT4 = 10
+        PHI_INIT3 = 25
+        PHI_INIT4 = 0.01
 
         _N = self.end_time / self.Ts
 
@@ -312,6 +312,7 @@ class RandomTrajectory:
             self.pub.publish(self.jointCmd)
             self.rate.sleep()
             _k += 1
+            print('phi={0}'.format([phi_k_joint1, phi_k_joint2, phi_k_joint3, phi_k_joint4]))
             # time.sleep(3.0/4.0*self.Ts)
 
         time_plt = range(0, int(_N))
