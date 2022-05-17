@@ -242,7 +242,7 @@ class RandomTrajectory:
                           [ 1.29888826,  0.54342819,  1.41172789,   0.91171883],
                           [ 1.07202863,  0.28334642,  0.91171883,   1.27898473]])                          
 
-        noise = 0.1
+        noise = 0.0
         _Wa_1 = (1/_Wc_1[3][3]*_Wc_1[3][0:3]).reshape(1, 3)  # shape(1, 3) NEGATED
         _Wa_1[0, 1] *= -1
         _Wa_1[0, 0] += np.random.normal(scale=noise)
@@ -256,7 +256,7 @@ class RandomTrajectory:
         _Wa_2[0, 1] += np.random.normal(scale=noise_2)
         _Wa_2[0, 2] += np.random.normal(scale=noise_2)
         
-        noise = 0.1
+        noise = 0.0
         _Wa_3 = (1/_Wc_3[3][3]*_Wc_3[3][0:3]).reshape(1, 3)  # shape(1, 3) NEGATED
         _Wa_3[0, 1] *= -1
         _Wa_3[0, 0] += np.random.normal(scale=noise)
@@ -373,7 +373,7 @@ class RandomTrajectory:
 
             # Find V and U: Step 8 for Joint 4 Position
             _Eu_concat_4 = np.concatenate((_E_k_4, _u_hat_4.reshape(-1, 1)), axis=0)
-            _Eu_transpose_4 = np.transpose(_Eu_concat_3)
+            _Eu_transpose_4 = np.transpose(_Eu_concat_4)
             _V_k_4 = 1/2.0 * np.matmul(np.matmul(_Eu_transpose_4, _Wc_4), _Eu_concat_4)
             _E_transpose_4 = np.transpose(_E_k_4)
             _eqe_4 = np.matmul(np.matmul(_E_transpose_4, _Q_4), _E_k_4)
@@ -437,6 +437,7 @@ class RandomTrajectory:
 
             # Update critic weights: Step 11 for Joint 4 Position
             temp = _zeta_critic*(_V_k_4 - (_U_k_4 + _V_k1_4))
+            print([_V_k_4, (_U_k_4 + _V_k1_4), temp])
             _Wc_4 -= temp*np.matmul(_Z_4, _Z_trans_4)
             _Wa_4 -= _zeta_actor*(np.matmul(_Wa_4, _E_k_4) - (-1/_Wc_4[3][3]*np.matmul(_Wc_4[3][0:3], _E_k_4)))*_E_transpose_4
 
@@ -450,20 +451,20 @@ class RandomTrajectory:
                 _Wa_1[0, 2] += np.random.normal(scale=noise)
 
             #     _Wa_2 = (1 / _Wc_2[3][3] * _Wc_2[3][0:3]).reshape(1, 3)  # shape(1, 3) NEGATED
-                _Wa_2[0, 0] += np.random.normal(scale=noise/2.0)
-                _Wa_2[0, 1] += np.random.normal(scale=noise/2.0)
-                _Wa_2[0, 2] += np.random.normal(scale=noise/2.0)
+                _Wa_2[0, 0] += np.random.normal(scale=noise)
+                _Wa_2[0, 1] += np.random.normal(scale=noise)
+                _Wa_2[0, 2] += np.random.normal(scale=noise)
 
             #     _Wa_3 = (1 / _Wc_3[3][3] * _Wc_3[3][0:3]).reshape(1, 3)  # shape(1, 3) NEGATED
                 _Wa_3[0, 0] += np.random.normal(scale=noise)
                 _Wa_3[0, 1] += np.random.normal(scale=noise)
                 _Wa_3[0, 2] += np.random.normal(scale=noise)
                 
-                noise_4 = 0.005
+                noise_4 = 0.000
             #     _Wa_4 = (1 / _Wc_4[3][3] * _Wc_4[3][0:3]).reshape(1, 3)  # shape(1, 3) NEGATED
-                _Wa_4[0, 0] += np.random.normal(scale=noise_4)
-                _Wa_4[0, 1] += np.random.normal(scale=noise_4)
-                _Wa_4[0, 2] += np.random.normal(scale=noise_4)
+                # _Wa_4[0, 0] += np.random.normal(scale=noise_4)
+                # _Wa_4[0, 1] += np.random.normal(scale=noise_4)
+                # _Wa_4[0, 2] += np.random.normal(scale=noise_4)
 
             # Updates
             _E_k_1 = _E_k1_1
@@ -572,7 +573,8 @@ class RandomTrajectory:
                                np.array(_Wa_4_3).reshape(-1, 1)), axis=1)
 
         filename = str(raw_input("Enter a filename:"))
-        filepath = '/home/keenan/catkin_ws/src/rose_ieee/data/our_algo/' + filename + '.csv'
+        # filepath = '/home/keenan/catkin_ws/src/rose_ieee/data/our_algo/' + filename + '.csv'
+        filepath = '/home/ros/catkin_ws/src/course_dir/rose_ieee/data/our_algo' + filename + '.csv'
         np.savetxt(filepath, data, delimiter=',')
 
         # while not rospy.is_shutdown():
