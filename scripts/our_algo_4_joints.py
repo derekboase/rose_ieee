@@ -440,30 +440,30 @@ class RandomTrajectory:
             _Wc_4 -= temp*np.matmul(_Z_4, _Z_trans_4)
             _Wa_4 -= _zeta_actor*(np.matmul(_Wa_4, _E_k_4) - (-1/_Wc_4[3][3]*np.matmul(_Wc_4[3][0:3], _E_k_4)))*_E_transpose_4
 
-            # T = 1/self.Ts * self.end_time
+            T = 1/self.Ts * self.end_time
 
-            # if _k <= 0.1 * T:
-            #     noise = 0.01
-            # #     _Wa_1 = (1 / _Wc_1[3][3] * _Wc_1[3][0:3]).reshape(1, 3)  # shape(1, 3) NEGATED
-            #     _Wa_1[0, 0] += np.random.normal(scale=noise)
-            #     _Wa_1[0, 1] += np.random.normal(scale=noise)
-            #     _Wa_1[0, 2] += np.random.normal(scale=noise)
+            if _k <= 0.2 * T:
+                noise = 0.015
+            #     _Wa_1 = (1 / _Wc_1[3][3] * _Wc_1[3][0:3]).reshape(1, 3)  # shape(1, 3) NEGATED
+                _Wa_1[0, 0] += np.random.normal(scale=noise)
+                _Wa_1[0, 1] += np.random.normal(scale=noise)
+                _Wa_1[0, 2] += np.random.normal(scale=noise)
 
-            # #     _Wa_2 = (1 / _Wc_2[3][3] * _Wc_2[3][0:3]).reshape(1, 3)  # shape(1, 3) NEGATED
-            #     _Wa_2[0, 0] += np.random.normal(scale=noise/2.0)
-            #     _Wa_2[0, 1] += np.random.normal(scale=noise/2.0)
-            #     _Wa_2[0, 2] += np.random.normal(scale=noise/2.0)
+            #     _Wa_2 = (1 / _Wc_2[3][3] * _Wc_2[3][0:3]).reshape(1, 3)  # shape(1, 3) NEGATED
+                _Wa_2[0, 0] += np.random.normal(scale=noise)
+                _Wa_2[0, 1] += np.random.normal(scale=noise)
+                _Wa_2[0, 2] += np.random.normal(scale=noise)
 
-            # #     _Wa_3 = (1 / _Wc_3[3][3] * _Wc_3[3][0:3]).reshape(1, 3)  # shape(1, 3) NEGATED
-            #     _Wa_3[0, 0] += np.random.normal(scale=noise)
-            #     _Wa_3[0, 1] += np.random.normal(scale=noise)
-            #     _Wa_3[0, 2] += np.random.normal(scale=noise)
+            #     _Wa_3 = (1 / _Wc_3[3][3] * _Wc_3[3][0:3]).reshape(1, 3)  # shape(1, 3) NEGATED
+                _Wa_3[0, 0] += np.random.normal(scale=noise)
+                _Wa_3[0, 1] += np.random.normal(scale=noise)
+                _Wa_3[0, 2] += np.random.normal(scale=noise)
                 
-            #     noise_4 = 0.005
-            # #     _Wa_4 = (1 / _Wc_4[3][3] * _Wc_4[3][0:3]).reshape(1, 3)  # shape(1, 3) NEGATED
-            #     _Wa_4[0, 0] += np.random.normal(scale=noise_4)
-            #     _Wa_4[0, 1] += np.random.normal(scale=noise_4)
-            #     _Wa_4[0, 2] += np.random.normal(scale=noise_4)
+                noise_4 = 0.015
+            #     _Wa_4 = (1 / _Wc_4[3][3] * _Wc_4[3][0:3]).reshape(1, 3)  # shape(1, 3) NEGATED
+                _Wa_4[0, 0] += np.random.normal(scale=noise_4)
+                _Wa_4[0, 1] += np.random.normal(scale=noise_4)
+                _Wa_4[0, 2] += np.random.normal(scale=noise_4)
 
             # Updates
             _E_k_1 = _E_k1_1
