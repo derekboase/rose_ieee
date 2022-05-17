@@ -373,7 +373,7 @@ class RandomTrajectory:
 
             # Find V and U: Step 8 for Joint 4 Position
             _Eu_concat_4 = np.concatenate((_E_k_4, _u_hat_4.reshape(-1, 1)), axis=0)
-            _Eu_transpose_4 = np.transpose(_Eu_concat_3)
+            _Eu_transpose_4 = np.transpose(_Eu_concat_4)
             _V_k_4 = 1/2.0 * np.matmul(np.matmul(_Eu_transpose_4, _Wc_4), _Eu_concat_4)
             _E_transpose_4 = np.transpose(_E_k_4)
             _eqe_4 = np.matmul(np.matmul(_E_transpose_4, _Q_4), _E_k_4)
@@ -443,23 +443,37 @@ class RandomTrajectory:
             T = 1/self.Ts * self.end_time
 
             if _k <= 0.2 * T:
+<<<<<<< HEAD
                 noise = 0.01
+=======
+                noise = 0.015
+>>>>>>> 838b76b38931772f4137aa4401aed3a473add29d
             #     _Wa_1 = (1 / _Wc_1[3][3] * _Wc_1[3][0:3]).reshape(1, 3)  # shape(1, 3) NEGATED
                 _Wa_1[0, 0] += np.random.normal(scale=noise)
                 _Wa_1[0, 1] += np.random.normal(scale=noise)
                 _Wa_1[0, 2] += np.random.normal(scale=noise)
 
             #     _Wa_2 = (1 / _Wc_2[3][3] * _Wc_2[3][0:3]).reshape(1, 3)  # shape(1, 3) NEGATED
+<<<<<<< HEAD
                 _Wa_2[0, 0] += np.random.normal(scale=noise/2.0)
                 _Wa_2[0, 1] += np.random.normal(scale=noise/2.0)
                 _Wa_2[0, 2] += np.random.normal(scale=noise/2.0)
+=======
+                _Wa_2[0, 0] += np.random.normal(scale=noise)
+                _Wa_2[0, 1] += np.random.normal(scale=noise)
+                _Wa_2[0, 2] += np.random.normal(scale=noise)
+>>>>>>> 838b76b38931772f4137aa4401aed3a473add29d
 
             #     _Wa_3 = (1 / _Wc_3[3][3] * _Wc_3[3][0:3]).reshape(1, 3)  # shape(1, 3) NEGATED
                 _Wa_3[0, 0] += np.random.normal(scale=noise)
                 _Wa_3[0, 1] += np.random.normal(scale=noise)
                 _Wa_3[0, 2] += np.random.normal(scale=noise)
                 
+<<<<<<< HEAD
                 noise_4 = 0.005
+=======
+                noise_4 = 0.015
+>>>>>>> 838b76b38931772f4137aa4401aed3a473add29d
             #     _Wa_4 = (1 / _Wc_4[3][3] * _Wc_4[3][0:3]).reshape(1, 3)  # shape(1, 3) NEGATED
                 _Wa_4[0, 0] += np.random.normal(scale=noise_4)
                 _Wa_4[0, 1] += np.random.normal(scale=noise_4)
