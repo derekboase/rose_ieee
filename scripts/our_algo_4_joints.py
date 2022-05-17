@@ -8,7 +8,7 @@ from trajectory_msgs.msg import JointTrajectoryPoint
 from trajectory_msgs.msg import JointTrajectory
 from sensor_msgs.msg import JointState
 
-SIM = False
+SIM = True
 
 # from std_srvs.srv import Empty
 # from random import uniform
@@ -373,7 +373,7 @@ class RandomTrajectory:
 
             # Find V and U: Step 8 for Joint 4 Position
             _Eu_concat_4 = np.concatenate((_E_k_4, _u_hat_4.reshape(-1, 1)), axis=0)
-            _Eu_transpose_4 = np.transpose(_Eu_concat_3)
+            _Eu_transpose_4 = np.transpose(_Eu_concat_4)
             _V_k_4 = 1/2.0 * np.matmul(np.matmul(_Eu_transpose_4, _Wc_4), _Eu_concat_4)
             _E_transpose_4 = np.transpose(_E_k_4)
             _eqe_4 = np.matmul(np.matmul(_E_transpose_4, _Q_4), _E_k_4)
