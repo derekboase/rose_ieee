@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import rospy
 import time
+
 from trajectory_msgs.msg import JointTrajectoryPoint
 from trajectory_msgs.msg import JointTrajectory
 from sensor_msgs.msg import JointState
@@ -242,21 +243,19 @@ class RandomTrajectory:
                           [ 1.29888826,  0.54342819,  1.41172789,   0.91171883],
                           [ 1.07202863,  0.28334642,  0.91171883,   1.27898473]])                          
 
-        noise = 0.1
+        noise = 0.05
         _Wa_1 = (1/_Wc_1[3][3]*_Wc_1[3][0:3]).reshape(1, 3)  # shape(1, 3) NEGATED
         _Wa_1[0, 1] *= -1
         _Wa_1[0, 0] += np.random.normal(scale=noise)
         _Wa_1[0, 1] += np.random.normal(scale=noise)
         _Wa_1[0, 2] += np.random.normal(scale=noise)
 
-        noise_2 = 0.0
         _Wa_2 = (1/_Wc_2[3][3]*_Wc_2[3][0:3]).reshape(1, 3)  # shape(1, 3) NEGATED
         _Wa_2[0, 1] *= -1
-        _Wa_2[0, 0] += np.random.normal(scale=noise_2)
-        _Wa_2[0, 1] += np.random.normal(scale=noise_2)
-        _Wa_2[0, 2] += np.random.normal(scale=noise_2)
+        _Wa_2[0, 0] += np.random.normal(scale=noise)
+        _Wa_2[0, 1] += np.random.normal(scale=noise)
+        _Wa_2[0, 2] += np.random.normal(scale=noise)
         
-        noise = 0.1
         _Wa_3 = (1/_Wc_3[3][3]*_Wc_3[3][0:3]).reshape(1, 3)  # shape(1, 3) NEGATED
         _Wa_3[0, 1] *= -1
         _Wa_3[0, 0] += np.random.normal(scale=noise)
@@ -442,42 +441,28 @@ class RandomTrajectory:
 
             T = 1/self.Ts * self.end_time
 
-            if _k <= 0.2 * T:
-<<<<<<< HEAD
+            if True or (_k <= 0.6 * T):
                 noise = 0.01
-=======
-                noise = 0.015
->>>>>>> 838b76b38931772f4137aa4401aed3a473add29d
             #     _Wa_1 = (1 / _Wc_1[3][3] * _Wc_1[3][0:3]).reshape(1, 3)  # shape(1, 3) NEGATED
                 _Wa_1[0, 0] += np.random.normal(scale=noise)
                 _Wa_1[0, 1] += np.random.normal(scale=noise)
                 _Wa_1[0, 2] += np.random.normal(scale=noise)
 
             #     _Wa_2 = (1 / _Wc_2[3][3] * _Wc_2[3][0:3]).reshape(1, 3)  # shape(1, 3) NEGATED
-<<<<<<< HEAD
-                _Wa_2[0, 0] += np.random.normal(scale=noise/2.0)
-                _Wa_2[0, 1] += np.random.normal(scale=noise/2.0)
-                _Wa_2[0, 2] += np.random.normal(scale=noise/2.0)
-=======
-                _Wa_2[0, 0] += np.random.normal(scale=noise)
+                _Wa_2[0, 0] += np.random.normal(scale=noise) # repeated results with noise not noise/x
                 _Wa_2[0, 1] += np.random.normal(scale=noise)
                 _Wa_2[0, 2] += np.random.normal(scale=noise)
->>>>>>> 838b76b38931772f4137aa4401aed3a473add29d
 
             #     _Wa_3 = (1 / _Wc_3[3][3] * _Wc_3[3][0:3]).reshape(1, 3)  # shape(1, 3) NEGATED
                 _Wa_3[0, 0] += np.random.normal(scale=noise)
                 _Wa_3[0, 1] += np.random.normal(scale=noise)
                 _Wa_3[0, 2] += np.random.normal(scale=noise)
                 
-<<<<<<< HEAD
-                noise_4 = 0.005
-=======
-                noise_4 = 0.015
->>>>>>> 838b76b38931772f4137aa4401aed3a473add29d
+                noise_4 = 0.0175
             #     _Wa_4 = (1 / _Wc_4[3][3] * _Wc_4[3][0:3]).reshape(1, 3)  # shape(1, 3) NEGATED
-                _Wa_4[0, 0] += np.random.normal(scale=noise_4)
-                _Wa_4[0, 1] += np.random.normal(scale=noise_4)
-                _Wa_4[0, 2] += np.random.normal(scale=noise_4)
+                _Wa_4[0, 0] += np.random.normal(scale=noise)
+                _Wa_4[0, 1] += np.random.normal(scale=noise)
+                _Wa_4[0, 2] += np.random.normal(scale=noise)
 
             # Updates
             _E_k_1 = _E_k1_1
@@ -586,7 +571,7 @@ class RandomTrajectory:
                                np.array(_Wa_4_3).reshape(-1, 1)), axis=1)
 
         filename = str(raw_input("Enter a filename:"))
-        filepath = '/home/keenan/catkin_ws/src/rose_ieee/data/our_algo/' + filename + '.csv'
+        filepath = 'catkin_ws/src/course_dir/data/our_algo/noise_amp0.1_forRevision/' + filename + '.csv'
         np.savetxt(filepath, data, delimiter=',')
 
         # while not rospy.is_shutdown():
@@ -600,16 +585,16 @@ if __name__ == '__main__':
         rospy.init_node('move_robot_using_trajectory_msg')
         # allow gazebo to launch
         time.sleep(0.5)
-
+# 
         # Unpause the physics
         # rospy.wait_for_service('/gazebo/unpause_physics')
         # unpause_gazebo = rospy.ServiceProxy('/gazebo/unpause_physics', Empty)
         # resp = unpause_gazebo()
-
+# 
         rt = RandomTrajectory([0.0, np.pi/2, np.pi, -3.0*np.pi/4.0, np.pi, 0.0], freq=8.0, runtime=120.0)
         # rt = RandomTrajectory([0.0, np.pi/2, np.pi, -2.1, np.pi, 0.0], freq=8.0, runtime=120.0)
         rt.trajectory_calculator()
         rt.start()
-
+# 
     except rospy.ROSInterruptException:
         pass
